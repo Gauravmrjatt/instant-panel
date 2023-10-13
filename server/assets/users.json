@@ -1,0 +1,25 @@
+{
+    "users": [
+        {
+            "name": "Prince Negi",
+            "desc": "I absolutely love the instant payment panel! It's incredibly fast and user-friendly. Highly recommended!",
+            "img": "https://cashbee.pro/images/logoo.png",
+            "by": "Cashbee.pro",
+            "link": "https://cashbee.pro"
+        },
+        {
+            "name": "Akash Gupta",
+            "desc": "I'm really impressed with the instant payment panel! It's super convenient and efficient. Makes my transactions a breeze. Thumbs up!",
+            "img": "/assets/img/avatars/2.png",
+            "by": "Fokatcash.com",
+            "link": "https://offer.fokatcash.com/"
+        },
+        {
+            "name": "Nikhil Arora",
+            "desc": "The instant payment panel is a game-changer! It's fast, secure, and incredibly easy to use. Highly recommend it for seamless transactions",
+            "img": "https://earningarea.in/images/icons/icon-192x192.png?v=",
+            "by": "EarningArea.in",
+            "link": "https://earningarea.in/"
+        }
+    ]
+}
