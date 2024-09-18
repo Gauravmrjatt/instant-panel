@@ -112,8 +112,6 @@ export default function CustomAmount() {
             return toast.error("select a event")
         } else if (customDetails.number == '') {
             return toast.error("enter number")
-        } else if (customDetails.number.length != 10) {
-            return toast.error("enter 10 digits number")
         } else if (customDetails.referAmount == '') {
             return toast.error("enter refer amount")
         }
@@ -238,17 +236,17 @@ export default function CustomAmount() {
                                                         </div>
                                                     </div>
                                                     <label htmlFor="postback-url" className="form-label">
-                                                        ENTER REFERER NUMBER
+                                                        ENTER REFERER UPI
                                                     </label>
                                                     <Input
-                                                        aria-labelledby='number'
+                                                        aria-labelledby='UPI'
                                                         clearable
                                                         bordered
                                                         fullWidth
                                                         color="primary"
-                                                        type='number'
+                                                        type='text'
                                                         size="lg"
-                                                        placeholder="Number"
+                                                        placeholder="UPI"
                                                         onChange={(e) => {
                                                             var value = e.target.value;
                                                             setCustomDetails(prev => ({

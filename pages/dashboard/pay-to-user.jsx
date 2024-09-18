@@ -45,9 +45,6 @@ export default function PayToUser() {
             if (!pay.user) {
                 return reject("Invalid number")
             }
-            if (pay.user.length != 10) {
-                return reject("Number length should be 10 digits")
-            }
             if (!pay.amount) {
                 return reject("Enter amount to pay")
             }
@@ -99,7 +96,6 @@ export default function PayToUser() {
                                                     <button onClick={() => router.push("geteway-settings")} type="button" className="btn rounded-pill btn-outline-primary" fdprocessedid="dtrhg">
                                                         Gateway Settings   &nbsp; <span className="tf-icons bx bx-cog"></span>
                                                     </button>
-
                                                 </div>
                                             </div>
                                             <div>
@@ -111,10 +107,10 @@ export default function PayToUser() {
                                                             </code>
                                                         </pre>
                                                         <div className="form-floating">
-                                                            <input type='number' onChange={handelChanges} name='user' value={pay.user} className="form-control" id="number" placeholder="0000000000" aria-describedby="floatingInputHelp" fdprocessedid="badxh9" />
-                                                            <label htmlFor="number">Number</label>
+                                                            <input type='text' onChange={handelChanges} name='user' value={pay.user} className="form-control" id="number" placeholder="upiaddress@host" aria-describedby="floatingInputHelp" fdprocessedid="badxh9" />
+                                                            <label htmlFor="number">UPI</label>
                                                             <div id="numbere" className="form-text">
-                                                                Enter a 10 digits number to pay
+                                                                Enter a upi to pay
                                                             </div>
                                                         </div>
                                                         <div className="form-floating">
@@ -144,14 +140,14 @@ export default function PayToUser() {
                                     <div className="col-xl">
                                         <div className="card mb-4">
                                             <div className="card-header d-flex justify-content-between align-items-center">
-                                                <h5 className="mb-0">How to set?</h5>
+                                                <h5 className="mb-0">How to Use?</h5>
                                                 <small className="text-muted float-end"></small>
                                             </div>
                                             <hr />
                                             <div className="card-body">
                                                 <ul>
                                                     <li>
-                                                        Enter Number, Amount , Comment to pay
+                                                        Enter UPI, Amount , Comment to pay
                                                     </li>
                                                     <li>
                                                         Click Pay

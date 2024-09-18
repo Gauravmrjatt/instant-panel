@@ -45,8 +45,12 @@ export default function Dashboard() {
             document.body.removeChild(script);
         };
     }, []);
+
     useEffect(() => {
         axios.get("/get/dashboard").then(r => {
+            if (r.data.code == 0) {
+                 router.push('/plan/expired')
+             }
             setDash(r.data)
         })
     }, [])

@@ -6,7 +6,7 @@ import Splide from '@splidejs/splide';
 import { useEffect } from 'react';
 import Link from 'next/link';
 import Head from "next/head";
-
+import 'dotenv/config'
 export default function Home() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -155,7 +155,7 @@ export default function Home() {
       <div style={{ background: "#eee", textAlign: "center", padding: "30px", borderRadius: "20px", width: "100%" }} className="flex-box">
         <i style={{ fontSize: "50px" }} className='bx bxs-envelope'></i>
         <h3 className="email-icon">Email Us</h3>
-        <h5>support@mail.com</h5>
+        <h5>{ process.env.help_mail}</h5>
       </div>
       <div style={{ background: "#eee", textAlign: "center", padding: "30px", borderRadius: "20px", width: "100%" }} className="flex-box">
         <i style={{ fontSize: "50px" }} className='bx bxl-telegram'></i>

@@ -18,51 +18,12 @@ export default function BennedUserNumbers() {
             document.body.removeChild(script);
         };
     }, []);
-    const handleNumberdChange = (event) => {
-        setNumber(event.target.value);
-    };
-
-
-
-    const fun = () => {
-        return new Promise((resolve, reject) => {
-            if (!number) {
-                return reject("Invalid number")
-            }
-            if (number.length != 10) {
-                return reject("Number length should be 10 digits")
-            }
-            axios.post('/ban/number', { number })
-                .then((response) => {
-                    const data = response.data;
-                    if (data.status === true) {
-                        return resolve(data.msg)
-                    } else {
-                        return reject(data.msg)
-                    }
-                })
-                .catch((error) => {
-                    return reject('This is an error "' + error + '"!')
-                });
-        })
-    }
-    const banNumber = (e) => {
-        e.preventDefault();
-        toast.promise(
-            fun(),
-            {
-                loading: 'Changing Gateway Settings....',
-                success: 'Successfully changed!',
-                error: (error) => error
-            }
-        );
-    }
-
+   
 
     return (
         <>
             <Head>
-                <title>Banned Number</title>
+                <title>Banned Upi</title>
             </Head>
             <div className="layout-wrapper layout-content-navbar">
 
@@ -72,11 +33,11 @@ export default function BennedUserNumbers() {
                         <Header />
                         <div className="content-wrapper">
                             <div className="container-xxl flex-grow-1 container-p-y">
-                                <h4 className="fw-bold py-3 mb-4"><span className="text-muted fw-light">Dashboard /</span> Banned Number</h4>
+                                <h4 className="fw-bold py-3 mb-4"><span className="text-muted fw-light">Dashboard /</span> Banned Upi</h4>
                                 <div className="row">
                                     <div className="col-xl">
                                         <div className="card mb-5">
-                                            <h5 className="card-header">Banned Number</h5>
+                                            <h5 className="card-header">Banned Upi</h5>
                                             <hr className="my-0" />
                                             <Table />
                                         </div>

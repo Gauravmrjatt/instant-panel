@@ -56,7 +56,7 @@ export default function Pricing() {
                                     </p>
                                 </div>
                                 <div className="col-sm-12 col-md-4 col-lg-12">
-                                    <Link href="/auth/register?small" className="btn btn-lg btn-outline-blue py-8 pricing-btn" data-hs-event-107968771="1">Get Started</Link>
+                                    <Link href="/auth/register?plan=small" className="btn btn-lg btn-outline-blue py-8 pricing-btn" data-hs-event-107968771="1">Get Started</Link>
                                 </div>
                             </div>
                         </div>
@@ -81,7 +81,7 @@ export default function Pricing() {
                                     </p>
                                 </div>
                                 <div className="col-sm-12 col-md-4 col-lg-12">
-                                    <Link href="/auth/register?pro" className="btn btn-lg btn-outline-blue py-8 pricing-btn" data-hs-event-107968771="1">Get Started</Link>
+                                    <Link href="/auth/register?plan=pro" className="btn btn-lg btn-outline-blue py-8 pricing-btn" data-hs-event-107968771="1">Get Started</Link>
                                 </div>
                             </div>
                         </div>
@@ -106,7 +106,7 @@ export default function Pricing() {
                                     </p>
                                 </div>
                                 <div className="col-sm-12 col-md-4 col-lg-12">
-                                    <Link href="/auth/register?ultimate" className="btn btn-lg btn-blue py-8 pricing-btn" style={{ color: "white", background: "#0565ff" }} data-hs-event-107968771="1">Get Started</Link>
+                                    <Link href="/auth/register?plan=ultimate" className="btn btn-lg btn-blue py-8 pricing-btn" style={{ color: "white", background: "#0565ff" }} data-hs-event-107968771="1">Get Started</Link>
                                 </div>
 
                             </div>

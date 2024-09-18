@@ -49,7 +49,7 @@ export default function Lists({ iist, Campid }) {
 
                 for (const id of items) {
                     try {
-                        const response = await axios.post(`/api/update/pendings/` + Campid.id + "?com=" + comment, { ...id });
+                        const response = await axios.post(`/api/update/pendings/` + Campid.id + "?comment=" + comment, { ...id });
                         updateStatus(id.value, response.data.status);
                     } catch (error) {
                         updateStatus(id.value, response.data.status);
