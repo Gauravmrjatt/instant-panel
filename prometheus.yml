@@ -1,0 +1,22 @@
+global:
+  scrape_interval: 5s # Default scrape interval
+  evaluation_interval: 5s # Default evaluation interval
+
+scrape_configs:
+  - job_name: "instant"
+    metrics_path: "/metrics"
+    scheme: "https" # Use https for secure connections
+    static_configs:
+      - targets:
+          - "panel2.logicpay.in"
+    tls_config:
+      insecure_skip_verify: true # Allow self-signed certificates (if applicable)
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: []
+
+rule_files:
+  # You can specify alerting rules here if needed
+  # - "rules.yml"

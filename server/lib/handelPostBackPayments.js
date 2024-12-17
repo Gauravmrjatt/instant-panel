@@ -293,7 +293,7 @@ const handelPayment = async (
         event: eventData.name,
       };
       if (tg.chatId) {
-        let textMessage = `<b.>
+        let textMessage = `<b>
 ⚠️ ${camp.name} Conversion Alert ⚠️
 ♻️ [${camp.offerID}] [${eventData.name}]
 
@@ -309,7 +309,7 @@ const handelPayment = async (
 ⭐️ Total Leads : ${totalLeadsCount + 1} ( Today ${leadCount + 1} )
 
 🧲 Powered By <a href='https://earningarea.in/redirectto?instant'>Earning Area</a>
-                </b.>`;
+                </b>`;
         Notification(tg.chatId, textMessage);
 
         let channelPost = `<b>💖 New Lead Tracked

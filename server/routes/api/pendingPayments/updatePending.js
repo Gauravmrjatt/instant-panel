@@ -33,6 +33,7 @@ router.post("/:id", authValid, authValidWithDb, async (req, res) => {
         },
       },
     ];
+
     const payments = await PendingPayment.find({
       userId: new ObjectId(userDetails._id),
       status: {
