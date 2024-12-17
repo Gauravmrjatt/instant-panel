@@ -20,7 +20,7 @@ import { IconButton } from "@mui/material";
 import { Filter } from "react-iconly";
 import Link from "next/link";
 import { Badge, Tooltip, Dropdown } from "@nextui-org/react";
-import UpdateSelection from "@/pages/dashboard/camp/view/updateSelected";
+import UpdateSelection from "@/components/updateSelected";
 export default function Leads() {
   const router = useRouter();
   const { id: ID } = router.query;
