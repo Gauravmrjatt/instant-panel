@@ -250,61 +250,89 @@ const MyNav = () => {
             <li className="menu-header small text-uppercase">
               <span className="menu-header-text">Api</span>
             </li>
-            <li className={isActive("/dashboard/api/checkRefer")}>
-              <Link href="/dashboard/api/checkRefer" className="menu-link">
-                <ShieldDone
-                  className="menu-icon"
-                  set="bulk"
-                  secondaryColor="blueviolet"
-                  primaryColor="blueviolet"
-                />
-                <div data-i18n="Campaigns">Refer Check</div>
-              </Link>
+            <li className="menu-item">
+              <li className={isActive("/dashboard/api/checkRefer")}>
+                <Link href="/dashboard/api/checkRefer" className="menu-link">
+                  <ShieldDone
+                    className="menu-icon"
+                    set="bulk"
+                    secondaryColor="blueviolet"
+                    primaryColor="blueviolet"
+                  />
+                  <div data-i18n="Campaigns">Refer Check</div>
+                </Link>
+              </li>
+              <li className={isActive("/dashboard/api/user")}>
+                <Link href="/dashboard/api/user" className="menu-link">
+                  <ShieldDone
+                    className="menu-icon"
+                    set="bulk"
+                    secondaryColor="blueviolet"
+                    primaryColor="blueviolet"
+                  />
+                  <div data-i18n="Campaigns">User Check</div>
+                </Link>
+              </li>
+              <li className={isActive("/dashboard/api/custom")}>
+                <Link href="/dashboard/api/custom" className="menu-link">
+                  <ShieldDone
+                    className="menu-icon"
+                    set="bulk"
+                    secondaryColor="blueviolet"
+                    primaryColor="blueviolet"
+                  />
+                  <div data-i18n="Campaigns">Custom Amount</div>
+                </Link>
+              </li>
+              <li className={isActive("/dashboard/api/get-custom")}>
+                <Link href="/dashboard/api/get-custom" className="menu-link">
+                  <ShieldDone
+                    className="menu-icon"
+                    set="bulk"
+                    secondaryColor="blueviolet"
+                    primaryColor="blueviolet"
+                  />
+                  <div data-i18n="Campaigns">Get Custom Amount</div>
+                </Link>
+              </li>
+              <li className={isActive("/dashboard/api/camp")}>
+                <Link href="/dashboard/api/camp" className="menu-link">
+                  <ShieldDone
+                    className="menu-icon"
+                    set="bulk"
+                    secondaryColor="blueviolet"
+                    primaryColor="blueviolet"
+                  />
+                  <div data-i18n="Campaigns">Camp Details</div>
+                </Link>
+              </li>
+              <li className={isActive("/dashboard/api/pendingCheck")}>
+                <Link href="/dashboard/api/pendingCheck" className="menu-link">
+                  <ShieldDone
+                    className="menu-icon"
+                    set="bulk"
+                    secondaryColor="blueviolet"
+                    primaryColor="blueviolet"
+                  />
+                  <div data-i18n="Campaigns">Check Pending</div>
+                </Link>
+              </li>
+              <li className={isActive("/dashboard/api/releasePending")}>
+                <Link
+                  href="/dashboard/api/releasePending"
+                  className="menu-link"
+                >
+                  <ShieldDone
+                    className="menu-icon"
+                    set="bulk"
+                    secondaryColor="blueviolet"
+                    primaryColor="blueviolet"
+                  />
+                  <div data-i18n="Campaigns">Release Pending</div>
+                </Link>
+              </li>
             </li>
-            <li className={isActive("/dashboard/api/user")}>
-              <Link href="/dashboard/api/user" className="menu-link">
-                <ShieldDone
-                  className="menu-icon"
-                  set="bulk"
-                  secondaryColor="blueviolet"
-                  primaryColor="blueviolet"
-                />
-                <div data-i18n="Campaigns">User Check</div>
-              </Link>
-            </li>
-            <li className={isActive("/dashboard/api/custom")}>
-              <Link href="/dashboard/api/custom" className="menu-link">
-                <ShieldDone
-                  className="menu-icon"
-                  set="bulk"
-                  secondaryColor="blueviolet"
-                  primaryColor="blueviolet"
-                />
-                <div data-i18n="Campaigns">Custom Amount</div>
-              </Link>
-            </li>
-            <li className={isActive("/dashboard/api/get-custom")}>
-              <Link href="/dashboard/api/get-custom" className="menu-link">
-                <ShieldDone
-                  className="menu-icon"
-                  set="bulk"
-                  secondaryColor="blueviolet"
-                  primaryColor="blueviolet"
-                />
-                <div data-i18n="Campaigns">Get Custom Amount</div>
-              </Link>
-            </li>
-            <li className={isActive("/dashboard/api/camp")}>
-              <Link href="/dashboard/api/camp" className="menu-link">
-                <ShieldDone
-                  className="menu-icon"
-                  set="bulk"
-                  secondaryColor="blueviolet"
-                  primaryColor="blueviolet"
-                />
-                <div data-i18n="Campaigns">Camp Details</div>
-              </Link>
-            </li>
+
             <li className="menu-header small text-uppercase">
               <span className="menu-header-text">Extra</span>
             </li>

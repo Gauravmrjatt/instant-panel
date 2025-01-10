@@ -140,7 +140,7 @@ export default function AddCampaigns() {
       domain +
         "/api/v1/click/" +
         ID +
-        `?aff_click_id={user_number}&sub_aff_id={refer_number}&userIp={ip}&device={user_agent}`
+        `?aff_click_id={user_number}&sub_aff_id={refer_number}&userIp={ip}&device={user_agent}&number={number}`
     );
     toast.success("copied!");
   }
@@ -313,7 +313,8 @@ export default function AddCampaigns() {
                               {domain + "/api/v1/click/" + ID ?? ""}
                               ?aff_click_id=
                               {"{user_number}"}&sub_aff_id={"{refer_number}"}
-                              &userIp={"{ip}"}&device={"{user_agent}"}
+                              &userIp={"{ip}"}&device=
+                              {"{user_agent}&number={number}"}
                               <span style={{ float: "right" }}>
                                 {" "}
                                 <IconButton

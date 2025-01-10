@@ -61,6 +61,7 @@ router.post("/", authValid, authValidWithDb, async (req, res) => {
       eventData.refer = Lead.referAmount;
       eventData.user = Lead.userAmount;
       handelPayment(userDetails._id, eventData, Lead, userDetails.tgId);
+
       return res.json({
         status: true,
         msg: "Status Updated Successfully & Payment Done",

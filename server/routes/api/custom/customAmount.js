@@ -6,7 +6,7 @@ const myDetails = require("../../../../pages/myDetails.json");
 const CustomAmount = require("../../../models/CustomAmount");
 router.post("/", authValid, authValidWithDb, async (req, res) => {
   try {
-    const { camp, ...body } = req.body;
+    const { camp, referPayment, ...body } = req.body;
     const userDetails = req.user.db;
     try {
       const isExist = await CustomAmount.findOne({
@@ -34,6 +34,7 @@ router.post("/", authValid, authValidWithDb, async (req, res) => {
       user: userDetails.userId,
       ...body,
       campId: camp,
+      referInstant: referPayment == "pending" ? false : true,
     });
 
     try {

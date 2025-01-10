@@ -6,63 +6,57 @@ const Users = require("../../../models/Users");
 const Camp = require("../../../models/Campaigns");
 
 router.post("/:apikey", async (req, res) => {
-  try {
-    const { apikey } = req.params;
-    const { camp, ...body } = req.body;
-    if (!apikey) {
-      7;
-      return res.json({
-        status: false,
-        msg: "Api key is missing",
-      });
-    }
-    const isUser = await Users.findOne({
-      PostbackToken: apikey,
-    });
-    if (!isUser) {
-      return res.json({
-        status: false,
-        msg: "Invalid api token",
-      });
-    }
-    const isCamp = await Camp.findOne({
-      offerID: camp,
-      userId: isUser._id,
-    });
-    if (!isCamp) {
-      return res.json({
-        status: false,
-        msg: "Invalid campaign id",
-      });
-    }
-    try {
-      const updatedCustomAmount = await CustomAmount.findOneAndUpdate(
-        { campId: isCamp._id, event: body.event, number: body.number },
-        {
-          userId: isUser._id,
-          user: isUser.userId,
-          ...body,
-          campId: isCamp._id,
-        },
-        { new: true, upsert: true }
-      );
+  const { apikey } = req.params;
+  const { camp, ...body } = req.body;
 
-      res.json({
-        status: true,
-        msg: updatedCustomAmount.isNew
-          ? "Custom details added successfully"
-          : "Custom details updated successfully",
-        id: updatedCustomAmount._id,
-      });
-    } catch (error) {
-      res.json({
+  if (!apikey) {
+    return res.status(400).json({
+      status: false,
+      msg: "API key is missing",
+    });
+  }
+
+  try {
+    // Validate user using API key
+    const isUser = await Users.findOne({ PostbackToken: apikey });
+    if (!isUser) {
+      return res.status(401).json({
         status: false,
-        msg: "Internal server error",
-        error: error.message,
+        msg: "Invalid API token",
       });
     }
+
+    // Validate campaign
+    const isCamp = await Camp.findOne({ offerID: camp, userId: isUser._id });
+    if (!isCamp) {
+      return res.status(404).json({
+        status: false,
+        msg: "Invalid campaign ID",
+      });
+    }
+
+    // Upsert custom amount
+    const updatedCustomAmount = await CustomAmount.findOneAndUpdate(
+      { campId: isCamp._id, event: body.event, number: body.number },
+      {
+        userId: isUser._id,
+        user: isUser.userId,
+        ...body,
+        campId: isCamp._id,
+      },
+      { new: true, upsert: true }
+    );
+
+    res.status(200).json({
+      status: true,
+      msg: updatedCustomAmount.isNew
+        ? "Custom details added successfully"
+        : "Custom details updated successfully",
+      id: updatedCustomAmount._id,
+    });
   } catch (error) {
-    res.json({
+    console.error("Error occurred:", error.message);
+    res.status(500).json({
       status: false,
       msg: "Internal server error",
       error: error.message,

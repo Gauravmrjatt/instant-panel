@@ -96,6 +96,11 @@ router.use("/get/new/reports", require("../routes/api/reports/new.reports"));
 //apis
 router.use("/api/v1/checkRefer", require("../routes/api/apis/checkRefer"));
 router.use("/api/v1/user", require("../routes/api/apis/user"));
+router.use("/api/v1/checkPending", require("../routes/api/apis/checkPending"));
+router.use(
+  "/api/v1/releasePending",
+  require("../routes/api/apis/releasePending")
+);
 
 //billing
 router.use("/get/billing", require("../routes/api/billing/getBilling"));

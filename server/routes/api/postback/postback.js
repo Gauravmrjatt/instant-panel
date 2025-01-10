@@ -108,17 +108,20 @@ router.get("/:PostbackToken/:event", checkParams, async (req, res) => {
       if (isCustom.userComment) {
         eventData.userComment = isCustom.userComment;
       }
+      if (!isCustom.referInstant) {
+        clickId.campId.referPending = true;
+      }
     }
     const ClickcreatedAt = clickId.createdAt;
     const currentTime = new Date();
-    const clickToConv = (currentTime - ClickcreatedAt) / 1000;
-    // Check if posyback server ip (if required) if manual then don't check ip
+    const clicktoconv = (currentTime - ClickcreatedAt) / 1000;
+    // Check if postback server ip (if required) if manual then don't check ip
     if (req.query.type && req.query.type == "manual") {
     } else {
       if (clickId.campId.ips.length > 0 && !clickId.campId.ips.includes(ip)) {
         // Save and rejected
         await saveLead({
-          clicktoconv: clickToConv,
+          clicktoconv: clicktoconv,
           userAmount: eventData.user,
           referAmount: eventData.refer,
           click: click,
@@ -148,9 +151,9 @@ router.get("/:PostbackToken/:event", checkParams, async (req, res) => {
     //click to convesion delay
     if (indexOfEvent == 0) {
       if (clickId.campId.delay) {
-        if (clickToConv <= parseInt(clickId.campId.delay)) {
+        if (clicktoconv <= parseInt(clickId.campId.delay)) {
           await saveLead({
-            clicktoconv: clickToConv,
+            clicktoconv: clicktoconv,
             userAmount: eventData.user,
             referAmount: eventData.refer,
             click: click,
@@ -203,7 +206,7 @@ router.get("/:PostbackToken/:event", checkParams, async (req, res) => {
     ]);
     if (isUserBan) {
       await saveLead({
-        clicktoconv: clickToConv,
+        clicktoconv: clicktoconv,
         userAmount: eventData.user,
         referAmount: eventData.refer,
         click: click,
@@ -232,7 +235,7 @@ router.get("/:PostbackToken/:event", checkParams, async (req, res) => {
     }
     if (isReferBan) {
       await saveLead({
-        clicktoconv: clickToConv,
+        clicktoconv: clicktoconv,
         userAmount: eventData.user,
         referAmount: eventData.refer,
         click: click,
@@ -263,7 +266,7 @@ router.get("/:PostbackToken/:event", checkParams, async (req, res) => {
     if (!clickId.campId.same && clickId.user.trim() === clickId.refer.trim()) {
       // Save and rejected
       await saveLead({
-        clicktoconv: clickToConv,
+        clicktoconv: clicktoconv,
         userAmount: eventData.user,
         referAmount: eventData.refer,
         click: click,
@@ -301,7 +304,7 @@ router.get("/:PostbackToken/:event", checkParams, async (req, res) => {
       }))
     ) {
       await saveLead({
-        clicktoconv: clickToConv,
+        clicktoconv: clicktoconv,
         userAmount: eventData.user,
         referAmount: eventData.refer,
         click: click,
@@ -352,7 +355,7 @@ router.get("/:PostbackToken/:event", checkParams, async (req, res) => {
       }))
     ) {
       await saveLead({
-        clicktoconv: clickToConv,
+        clicktoconv: clicktoconv,
         userAmount: eventData.user,
         referAmount: eventData.refer,
         click: click,
@@ -392,7 +395,7 @@ router.get("/:PostbackToken/:event", checkParams, async (req, res) => {
 
       if (parseInt(eventData.caps) <= parseInt(leadCount)) {
         await saveLead({
-          clicktoconv: clickToConv,
+          clicktoconv: clicktoconv,
           userAmount: eventData.user,
           referAmount: eventData.refer,
           click: click,
@@ -446,7 +449,7 @@ router.get("/:PostbackToken/:event", checkParams, async (req, res) => {
 
       if (parseInt(eventData.dailyCaps) <= parseInt(leadCount)) {
         await saveLead({
-          clicktoconv: clickToConv,
+          clicktoconv: clicktoconv,
           userAmount: eventData.user,
           referAmount: eventData.refer,
           click: click,
@@ -492,7 +495,7 @@ router.get("/:PostbackToken/:event", checkParams, async (req, res) => {
       if (isPrevEnable === true) {
         if (!IsprevEvent) {
           await saveLead({
-            clicktoconv: clickToConv,
+            clicktoconv: clicktoconv,
             userAmount: eventData.user,
             referAmount: eventData.refer,
             click: click,
@@ -527,7 +530,7 @@ router.get("/:PostbackToken/:event", checkParams, async (req, res) => {
           const timeDifference = (current - createdAt) / (1000 * 60);
           if (parseInt(timeDifference) <= parseInt(time)) {
             await saveLead({
-              clicktoconv: clickToConv,
+              clicktoconv: clicktoconv,
               userAmount: eventData.user,
               referAmount: eventData.refer,
               click: click,
@@ -580,16 +583,17 @@ router.get("/:PostbackToken/:event", checkParams, async (req, res) => {
             event,
             clickId: clickId._id,
           },
+          clicktoconv,
         },
         user.tgId,
         clickId.campId,
         leadCount,
         totalLeadsCount,
-        clickToConv
+        clicktoconv
       );
     } else {
       await saveLead({
-        clicktoconv: clickToConv,
+        clicktoconv: clicktoconv,
         userAmount: eventData.user,
         referAmount: eventData.refer,
         click: click,

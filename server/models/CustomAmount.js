@@ -27,6 +27,11 @@ const CustomAmountSchema = new Schema({
   userComment: {
     type: String,
   },
+  referInstant: {
+    type: Boolean,
+    default: true,
+  },
+
   referComment: {
     type: String,
   },

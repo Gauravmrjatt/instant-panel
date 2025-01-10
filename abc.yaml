@@ -1,0 +1,76 @@
+services:
+  app:
+    image: gauravmrjatt/instant-panel:latest
+    container_name: instant-panel
+    ports:
+      - "3000:3000" # Expose app on port 3000
+    environment:
+      - help_mail=test@gmail.com
+      - PORT=3000
+      - DB_URL=mongodb://mongo:27017/abc # Use the service name 'mongo' for the connection
+      - domain=http://localhost:3000
+    env_file:
+      - .env
+    volumes:
+      - ./server:/app/server # Mount the 'server' folder
+      - ./node_modules:/app/node_modules # Ensure container-only node_modules
+    depends_on:
+      - mongo
+      - redis
+      - rabbitmq
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+
+  mongo:
+    image: mongo:5.0
+    container_name: mongodb
+    ports:
+      - "27018:27017" # Expose MongoDB port
+    volumes:
+      - mongo-data:/data/db # Persist MongoDB data
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: mongo-express
+    ports:
+      - "8081:8081" # Expose Mongo Express on port 8081
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongo # Connect Mongo Express to the MongoDB service
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_BASICAUTH_USERNAME=admin # Set a username for basic auth
+      - ME_CONFIG_BASICAUTH_PASSWORD=admin123 # Set a password for basic auth
+    depends_on:
+      - mongo # Ensure MongoDB starts before Mongo Express
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090" # Expose Prometheus on port 9090
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml # Mount Prometheus configuration
+    depends_on:
+      - app # Ensure the app service starts before Prometheus
+
+volumes:
+  mongo-data:
+  redis-data:
+  rabbitmq-data:

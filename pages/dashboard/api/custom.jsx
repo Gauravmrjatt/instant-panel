@@ -19,7 +19,8 @@ const code = `
   "referAmount": "", 
   "userAmount": "",
   "referComment": "",
-  "userComment": ""
+  "userComment": "",
+  "referInstant" : true // for refer payment instant false for pending
 }
 
 

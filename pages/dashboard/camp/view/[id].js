@@ -128,7 +128,18 @@ export default function Leads() {
     { field: "user", headerName: "USER", width: 130 },
     { field: "refer", headerName: "REFER", width: 130 },
     { field: "userAmount", headerName: "USER AMO..", width: 130 },
+    {
+      field: "clicktoconv",
+      headerName: "C2C TIME",
+      width: 120,
+      hide: true,
+      valueFormatter: (params) => {
+        const { value } = params;
+        return Math.round(value);
+      },
+    },
     { field: "referAmount", headerName: "REFER AMO..", width: 130 },
+
     {
       field: "paymentStatus",
       headerName: "PAYMENT",
@@ -214,12 +225,12 @@ export default function Leads() {
       },
     },
     {
-      field: "params",
+      field: "click",
       headerName: "CLICK ID",
       width: 120,
       hide: true,
-      renderCell: (params) => params.formattedValue.click,
     },
+
     {
       field: "id",
       headerName: "ACTIONS",
@@ -312,10 +323,6 @@ export default function Leads() {
   const handleRowSelection = (ids) => {
     setSelectedRows(ids);
   };
-
-  //   TODO http://localhost:3000/update/leadStatus
-  //     ID: "66e83a781dff99ef1915e672";
-  //     leadStatus: "Pending";
 
   return (
     <>
