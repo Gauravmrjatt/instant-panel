@@ -1,19 +1,17 @@
 const redis = require("redis");
 
-// Create a Redis client with optimized settings
+// Create a Redis client with a connection URL
 const redisClient = redis.createClient({
+  url: process.env.REDIS_URL || "redis://127.0.0.1:6379", // Use REDIS_URL from env or default
   socket: {
-    host: process.env.REDIS_HOST || "127.0.0.1", // Default host for development
-    port: process.env.REDIS_PORT || 6379, // Default port for Redis
     reconnectStrategy: (retries) => {
-      // Reconnect after an increasing delay with a max of 3 seconds
       if (retries > 10) {
         console.error("Too many retries to connect to Redis");
         return new Error("Retry limit reached");
       }
       return Math.min(retries * 100, 3000); // Delay before retrying
     },
-    timeout: 5000, // Socket timeout to prevent indefinite hanging
+    timeout: 5000, // Socket timeout
   },
 });
 
@@ -33,7 +31,7 @@ redisClient.on("end", () => {
 // Graceful shutdown handling
 process.on("SIGINT", async () => {
   try {
-    await redisClient.quit(); // Quit the Redis client properly
+    await redisClient.quit();
     console.log("Redis client gracefully disconnected");
     process.exit(0);
   } catch (err) {
