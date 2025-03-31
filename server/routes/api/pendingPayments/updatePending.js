@@ -6,33 +6,13 @@ const mongoose = require("mongoose");
 const ObjectId = mongoose.Types.ObjectId;
 const handelPayment = require("../../../lib/handelPayments");
 const Leads = require("../../../models/Leads");
+
 router.post("/:id", authValid, authValidWithDb, async (req, res) => {
   try {
     const { id } = req.params;
     const { value } = req.body;
     const { comment } = req.query;
     const userDetails = req.user.db;
-    const countPipeline = [
-      {
-        $match: {
-          userId: new ObjectId(userDetails._id),
-          status: {
-            $in: ["PENDING", "ACCEPTED"],
-          },
-          paymentStatus: {
-            $nin: ["ACCEPTED"],
-          },
-          campId: new ObjectId(id),
-          user: value,
-        },
-      },
-      {
-        $group: {
-          _id: "$user",
-          totalamount: { $sum: "$userAmount" },
-        },
-      },
-    ];
 
     const payments = await PendingPayment.find({
       userId: new ObjectId(userDetails._id),
@@ -52,10 +32,6 @@ router.post("/:id", authValid, authValidWithDb, async (req, res) => {
     });
 
     const totalAmount = payments.reduce((sum, obj) => sum + obj.userAmount, 0);
-    // console.log(clicks, totalAmount);
-    // console.log(update);
-    // // const countResults = await PendingPayment.aggregate(countPipeline);
-    // // const { totalamount, _id } = countResults[0]
     const payment = await handelPayment(
       userDetails._id,
       value,

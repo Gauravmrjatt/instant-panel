@@ -6,7 +6,6 @@ router.use("/auth/login", require("../routes/auth/login"));
 router.use("/auth/register", require("../routes/auth/register"));
 router.use("/auth/forget", require("../routes/auth/forget"));
 router.use("/auth/reset", require("../routes/auth/reset"));
-
 //api
 router.use("/api/v1/postback", require("../routes/api/postback/postback"));
 

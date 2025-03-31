@@ -1,0 +1,4 @@
+3 type ke pending approve hai
+1 selected (puri lead pending) : agar puri lead pending hai tabhi kam karta hai pending mien nahi jaeyag
+2 updated pending (only refer pending) : user admin select karega pendingPayment se jaeyag and lead status update hoga
+3 relsease api (only refer pending) : offer id and upi pass hoga pendingPayment se katega amount and lead status update hoga

@@ -74,7 +74,7 @@ router.get("/:PostbackToken/:event", checkParams, async (req, res) => {
                 refer: clickId.refer,
                 ip: clickId.ip,
                 event,
-                status: "Rejected",
+                status: "REJECTED",
                 message: "IP is not allowed",
                 params: req.query,
                 paymentStatus: "REJECTED"
@@ -133,7 +133,7 @@ router.get("/:PostbackToken/:event", checkParams, async (req, res) => {
                 refer: clickId.refer,
                 ip: clickId.ip,
                 event,
-                status: "Rejected",
+                status: "REJECTED",
                 message: "User and refer number are the same",
                 params: req.query,
                 paymentStatus: "REJECTED"
@@ -167,7 +167,7 @@ router.get("/:PostbackToken/:event", checkParams, async (req, res) => {
                 refer: clickId.refer,
                 ip: clickId.ip,
                 event,
-                status: "Rejected",
+                status: "REJECTED",
                 message: "Duplicate IP Address",
                 params: req.query,
                 paymentStatus: "REJECTED"

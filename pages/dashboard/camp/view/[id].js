@@ -62,7 +62,7 @@ export default function Leads() {
           chipColor = "success";
         } else if (value === "Pending") {
           chipColor = "warning";
-        } else if (value === "Rejected") {
+        } else if (value === "Rejected" || value === "REJECTED") {
           chipColor = "error";
         }
 
@@ -248,9 +248,9 @@ export default function Leads() {
             onClick={() =>
               router.push(
                 "/dashboard/camp/click/" +
-                  params.row.id +
-                  "?event=" +
-                  params.row.event
+                params.row.id +
+                "?event=" +
+                params.row.event
               )
             } // Replace with your action function
           >
