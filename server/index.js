@@ -52,6 +52,8 @@ app
         console.log("connected to database");
       },
       (err) => {
+        console.log("error connecting to database");
+        console.log(process.env.DB_URL)
         console.log(err);
       }
     );
