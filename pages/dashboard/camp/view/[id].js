@@ -139,7 +139,16 @@ export default function Leads() {
       },
     },
     { field: "referAmount", headerName: "REFER AMO..", width: 130 },
-
+    {
+      field: "params", headerName: "Params",
+      width: 130,
+      renderCell: (params) => {
+        const { value } = params;
+        return (
+          JSON.stringify(value)
+        );
+      },
+    },
     {
       field: "paymentStatus",
       headerName: "PAYMENT",
@@ -156,7 +165,6 @@ export default function Leads() {
         } else if (value === "fail" || value === "FAILURE") {
           chipColor = "error";
         }
-
         return (
           <Tooltip title={chipLabel} rounded color="primary">
             <div style={{ textAlign: "center" }}>
@@ -168,7 +176,6 @@ export default function Leads() {
         );
       },
     },
-
     {
       field: "payMessage",
       headerName: "PAY",
@@ -205,7 +212,6 @@ export default function Leads() {
         );
       },
     },
-
     {
       field: "createdAt",
       headerName: "CREATED AT",
@@ -230,7 +236,6 @@ export default function Leads() {
       width: 120,
       hide: true,
     },
-
     {
       field: "id",
       headerName: "ACTIONS",
@@ -361,7 +366,6 @@ export default function Leads() {
                           initialState={{
                             columns: {
                               columnVisibilityModel: {
-                                // Hide columns status and traderName, the other columns will remain visible
                                 params: false,
                               },
                             },

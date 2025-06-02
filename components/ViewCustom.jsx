@@ -10,22 +10,21 @@ import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 
 export default function App() {
-  const [selectedItems, setSelectedItems] = useState({});
-  const [isDisabled, setisDisabled] = useState(true);
-  const [isLoading, setIsLoading] = useState();
-  const [toShow, settoShow] = useState();
+  const [selectedItems, setSelectedItems] = useState(new Set());
+  const [isDeletingSelected, setIsDeletingSelected] = useState(false);
+  const [loadingItems, setLoadingItems] = useState(new Set());
+  const [isDisabled, setIsDisabled] = useState(true);
+  const [toShow, setToShow] = useState("");
 
-  let list = useAsyncList({ load, sort });
   const collator = useCollator({ numeric: true });
+  const list = useAsyncList({ load, sort });
+
   async function load({ signal }) {
-    const res = await fetch("/get/custom", {
-      signal,
-    });
+    const res = await fetch("/get/custom", { signal });
     const json = await res.json();
-    return {
-      items: json.list,
-    };
+    return { items: json.list };
   }
+
   async function sort({ items, sortDescriptor }) {
     return {
       items: items.sort((a, b) => {
@@ -41,11 +40,11 @@ export default function App() {
   }
 
   const handleClick = async (buttonId) => {
-    setIsLoading((prev) => [buttonId]);
+    setLoadingItems((prev) => new Set(prev).add(buttonId));
     toast.promise(
       new Promise((resolve, reject) => {
         axios
-          .post("/detete/custom", { _id: buttonId })
+          .post("/delete/custom", { _id: buttonId })
           .then((response) => {
             const data = response.data;
             if (data.status === true) {
@@ -57,6 +56,13 @@ export default function App() {
           })
           .catch((error) => {
             reject(`An error occurred: ${error}`);
+          })
+          .finally(() => {
+            setLoadingItems((prev) => {
+              const newSet = new Set(prev);
+              newSet.delete(buttonId);
+              return newSet;
+            });
           });
       }),
       {
@@ -66,22 +72,29 @@ export default function App() {
       }
     );
   };
+
   function deleteSelected() {
+    setIsDeletingSelected(true);
+    const itemsToDelete = selectedItems === "all" ? "all" : Array.from(selectedItems);
     toast.promise(
       new Promise((resolve, reject) => {
         axios
-          .post("/detete/custom", { data: selectedItems })
+          .post("/delete/custom", { data: itemsToDelete })
           .then((response) => {
             const data = response.data;
             if (data.status === true) {
               resolve(data.msg);
               list.reload();
+              setSelectedItems(new Set());
             } else {
               reject(data.msg);
             }
           })
           .catch((error) => {
             reject(`An error occurred: ${error}`);
+          })
+          .finally(() => {
+            setIsDeletingSelected(false);
           });
       }),
       {
@@ -91,117 +104,135 @@ export default function App() {
       }
     );
   }
+
   useEffect(() => {
-    console.log(selectedItems);
-    if (selectedItems == "all") {
-      setisDisabled(false);
-      return settoShow("all");
-    }
-    if (selectedItems.length > 0) {
-      setisDisabled(false);
-      settoShow("selected " + selectedItems.length);
+    if (selectedItems === "all") {
+      setIsDisabled(false);
+      setToShow("all");
+    } else if (selectedItems.size > 0) {
+      setIsDisabled(false);
+      setToShow("selected " + selectedItems.size);
     } else {
-      setisDisabled(true);
-      settoShow("");
+      setIsDisabled(true);
+      setToShow("");
     }
   }, [selectedItems]);
 
   function handleSelection(Item) {
-    if (Item == "all") {
-      setSelectedItems("all");
-    } else {
-      const selectedRows = new Set(Item);
-      const selectedRowsArray = [...selectedRows];
-      setSelectedItems(selectedRowsArray);
-    }
+    setSelectedItems(Item);
   }
 
   return (
     <>
-      <Button
-        onPress={deleteSelected}
-        css={{ width: 20, right: 10, top: 14, position: "absolute" }}
-        auto
-        color="error"
-        disabled={isDisabled}
-      >
-        Delete {toShow}
-      </Button>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", }}>
+        <Button
+          onPress={deleteSelected}
 
-      <Table
-        aria-label="view custom amount"
-        css={{ minWidth: "100%", height: "calc($space$14 * 10)" }}
-        sortDescriptor={list.sortDescriptor}
-        onSortChange={list.sort}
-        selectionMode="multiple"
-        selectedItems={selectedItems}
-        onSelectionChange={handleSelection}
-      >
-        <Table.Header>
-          <Table.Column key="number" allowsSorting>
-            NUMBER
-          </Table.Column>
-          <Table.Column key="name" allowsSorting>
-            CAMP
-          </Table.Column>
-          <Table.Column key="event" allowsSorting>
-            EVENT
-          </Table.Column>
-          <Table.Column key="userAmount" allowsSorting>
-            USER
-          </Table.Column>
-          <Table.Column key="referAmoun" allowsSorting>
-            REFER
-          </Table.Column>
-          <Table.Column key="referComment" allowsSorting>
-            REFER.COM
-          </Table.Column>
-          <Table.Column key="userComment" allowsSorting>
-            USER.COM
-          </Table.Column>
-          <Table.Column key="action" allowsSorting>
-            action
-          </Table.Column>
-        </Table.Header>
-        <Table.Body items={list.items} loadingState={list.loadingState}>
-          {(item) => (
-            <Table.Row key={item._id}>
-              <Table.Cell>{item.number}</Table.Cell>
-              <Table.Cell>{item.name}</Table.Cell>
-              <Table.Cell>{item.event}</Table.Cell>
-              <Table.Cell>{item.userAmount}</Table.Cell>
-              <Table.Cell>{item.referAmoun}</Table.Cell>
-              <Table.Cell>{item.referComment}</Table.Cell>
-              <Table.Cell>{item.userComment}</Table.Cell>
-              <Table.Cell>
-                <Button
-                  auto
-                  rounded
-                  color="error"
-                  onPress={() => handleClick(item._id)}
-                >
-                  {isLoading == item._id ? (
-                    <Loading
-                      type="points-opacity"
-                      color="currentColor"
-                      size="sm"
-                    />
-                  ) : (
-                    <i className="bx bxs-trash-alt"></i>
-                  )}
-                </Button>
-              </Table.Cell>
-            </Table.Row>
+          auto
+          color="error"
+
+          disabled={isDisabled || isDeletingSelected}
+        >
+          {isDeletingSelected ? (
+            <Loading type="points-opacity" color="currentColor" size="sm" />
+          ) : (
+            `Delete ${toShow}`
           )}
-        </Table.Body>
-        <Table.Pagination
-          shadow
-          noMargin
-          align="center"
-          rowsPerPage={10}
-          onPageChange={(page) => console.log({ page })}
-        />
-      </Table>
+        </Button>
+        <div style={{ overflowX: "auto", width: "100%" }}>
+          <Table
+            aria-label="View custom amount table"
+            sortDescriptor={list.sortDescriptor}
+            onSortChange={list.sort}
+            selectionMode="multiple"
+            selectedKeys={selectedItems}
+            onSelectionChange={handleSelection}
+            striped
+          >
+            <Table.Header>
+              <Table.Column key="number"
+                allowsSorting>
+                NUMBER
+              </Table.Column>
+              <Table.Column key="name"
+                css={{ textAlign: "center", padding: "10px" }}
+                allowsSorting>
+                CAMP
+              </Table.Column>
+              <Table.Column
+                css={{ textAlign: "center", padding: "10px" }}
+                key="event" allowsSorting>
+                EVENT
+              </Table.Column>
+              <Table.Column
+                css={{ textAlign: "center", padding: "10px" }}
+                key="userAmount" allowsSorting>
+                USER
+              </Table.Column>
+              <Table.Column
+                css={{ textAlign: "center", padding: "10px" }}
+                key="referAmount" allowsSorting>
+                REFER
+              </Table.Column>
+              <Table.Column
+                css={{ textAlign: "center", padding: "10px" }}
+                key="referComment" allowsSorting>
+                REFER COMMENT
+              </Table.Column>
+              <Table.Column
+                css={{ textAlign: "center", padding: "10px" }}
+                key="userComment" allowsSorting>
+                USER COMMENT
+              </Table.Column>
+              <Table.Column
+                css={{ textAlign: "center", padding: "10px" }}
+                key="action">
+                ACTION
+              </Table.Column>
+            </Table.Header>
+            <Table.Body items={list.items} loadingState={list.loadingState}>
+              {(item) => (
+                <Table.Row key={item._id}>
+                  <Table.Cell>{item.number}</Table.Cell>
+                  <Table.Cell css={{ textAlign: "center" }}>{item.name}</Table.Cell>
+                  <Table.Cell css={{ textAlign: "center" }}>{item.event}</Table.Cell>
+                  <Table.Cell css={{ textAlign: "center" }}>{item.userAmount}</Table.Cell>
+                  <Table.Cell css={{ textAlign: "center" }}>{item.referAmount}</Table.Cell>
+                  <Table.Cell css={{ textAlign: "center" }}>{item.referComment}</Table.Cell>
+                  <Table.Cell css={{ textAlign: "center" }}>{item.userComment}</Table.Cell>
+                  <Table.Cell css={{ textAlign: "center", margin: "auto" }}>
+                    <Button
+                      auto
+                      rounded
+                      color="error"
+                      css={{ margin: "auto" }}
+                      onPress={() => handleClick(item._id)}
+                      disabled={loadingItems.has(item._id)}
+                    >
+                      {loadingItems.has(item._id) ? (
+                        <Loading
+                          type="points-opacity"
+                          color="currentColor"
+                          size="sm"
+                        />
+                      ) : (
+                        <i className="bx bxs-trash-alt"></i>
+                      )}
+                    </Button>
+                  </Table.Cell>
+                </Table.Row>
+              )}
+            </Table.Body>
+            <Table.Pagination
+              shadow
+              noMargin
+              align="center"
+              rowsPerPage={10}
+              onPageChange={(page) => console.log({ page })}
+            />
+          </Table>
+        </div>
+      </div>
       <Toaster position="bottom-right" reverseOrder={false} />
     </>
   );

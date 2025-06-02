@@ -4,7 +4,9 @@
   "private": true,
   "homepage": "https://next.cashinmedia.in/",
   "scripts": {
-    "dev": "nodemon server/index.js",
+    "dev": "next dev",
+    "re": "node server/index.js",
+    "all": "nodemon server/index.js",
     "build": "next build",
     "start": "NODE_ENV=production node server",
     "lint": "next lint"

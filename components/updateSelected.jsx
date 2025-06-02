@@ -82,6 +82,9 @@ const UpdateSelection = ({ selection }) => {
     selection.length > 0 ? Math.round((count / selection.length) * 100) : 0;
   return (
     <>
+      <div>
+        <Button>Delete selected</Button>
+      </div>
       <Radio.Group
         orientation="horizontal"
         label="With selected"

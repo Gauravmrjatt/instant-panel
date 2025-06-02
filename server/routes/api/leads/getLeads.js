@@ -15,7 +15,7 @@ router.get("/:campId", authValid, authValidWithDb, async (req, res) => {
     }
     const leads = await Leads.find({ campId, userId: userDetails._id }).sort({
       createdAt: -1,
-    });
+    }).select("-__v -userId -campId -clickId -uniqueClick").lean();
     if (!leads) {
       res.json({
         status: false,

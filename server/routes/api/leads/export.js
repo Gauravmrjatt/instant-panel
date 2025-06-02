@@ -9,14 +9,37 @@ router.get("/:id", authValid, authValidWithDb, async (req, res) => {
     const userDetails = req.user.db;
     const { id } = req.params;
 
-    // Fetch the Leadss data with specific fields
-    const clicks = await Leads.find({
+    // Fetch leads data including the 'params' object
+    const leads = await Leads.find({
       userId: userDetails._id,
       campId: id,
-    }).select("click user refer ip event status paymentStatus createdAt");
+    }).select("click user refer ip event status paymentStatus createdAt params");
 
-    // Convert the clicks data to CSV
-    const fields = [
+    // Flatten the params object for each lead
+    const flattenedLeads = leads.map((lead) => {
+      const leadObj = lead.toObject(); // Convert Mongoose document to plain JS object
+
+      // Flatten params fields (if any)
+      if (leadObj.params && typeof leadObj.params === "object") {
+        for (const key in leadObj.params) {
+          leadObj[`params.${key}`] = leadObj.params[key];
+        }
+      }
+
+      delete leadObj.params; // Remove original nested object
+      return leadObj;
+    });
+
+    // Get dynamic keys from params across all leads
+    const paramKeys = [
+      ...new Set(
+        flattenedLeads.flatMap((lead) =>
+          Object.keys(lead).filter((key) => key.startsWith("params."))
+        )
+      ),
+    ];
+
+    const staticFields = [
       "click",
       "user",
       "refer",
@@ -26,10 +49,14 @@ router.get("/:id", authValid, authValidWithDb, async (req, res) => {
       "paymentStatus",
       "createdAt",
     ];
-    const json2csvParser = new Parser({ fields });
-    const csv = json2csvParser.parse(clicks);
 
-    // Set the response headers for CSV download
+    const fields = [...staticFields, ...paramKeys];
+
+    // Convert to CSV
+    const json2csvParser = new Parser({ fields });
+    const csv = json2csvParser.parse(flattenedLeads);
+
+    // Send as CSV
     res.header("Content-Type", "text/csv");
     res.attachment(`leads-${id}.csv`);
     res.send(csv);
@@ -39,7 +66,7 @@ router.get("/:id", authValid, authValidWithDb, async (req, res) => {
       msg: "Something went wrong",
       error,
     });
-    console.log(error);
+    console.error(error);
   }
 });
 

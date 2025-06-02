@@ -9,18 +9,41 @@ router.get("/:id", authValid, authValidWithDb, async (req, res) => {
     const userDetails = req.user.db;
     const { id } = req.params;
 
-    // Fetch the clicks data with specific fields
+    // Fetch the clicks data including 'params'
     const clicks = await Click.find({
       userId: userDetails._id,
       campId: id,
-    }).select("click user refer ip createdAt");
+    }).select("click user refer ip createdAt params");
 
-    // Convert the clicks data to CSV
-    const fields = ["click", "user", "refer", "ip", "createdAt"];
+    // Flatten params field
+    const flattenedClicks = clicks.map((doc) => {
+      const obj = doc.toObject();
+      if (obj.params && typeof obj.params === "object") {
+        for (const key in obj.params) {
+          obj[`params.${key}`] = obj.params[key];
+        }
+      }
+      delete obj.params;
+      return obj;
+    });
+
+    // Collect dynamic keys from params
+    const paramKeys = [
+      ...new Set(
+        flattenedClicks.flatMap((obj) =>
+          Object.keys(obj).filter((key) => key.startsWith("params."))
+        )
+      ),
+    ];
+
+    const staticFields = ["click", "user", "refer", "ip", "createdAt"];
+    const fields = [...staticFields, ...paramKeys];
+
+    // Convert to CSV
     const json2csvParser = new Parser({ fields });
-    const csv = json2csvParser.parse(clicks);
+    const csv = json2csvParser.parse(flattenedClicks);
 
-    // Set the response headers for CSV download
+    // Set response headers
     res.header("Content-Type", "text/csv");
     res.attachment(`clicks-${id}.csv`);
     res.send(csv);
