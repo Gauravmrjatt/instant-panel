@@ -68,6 +68,7 @@ router.use("/get/leads", require("../routes/api/leads/getLeads"));
 router.use("/export/leads", require("../routes/api/leads/export"));
 router.use("/update/leadStatus", require("../routes/api/leads/updateStatus"));
 router.use("/update/selected", require("../routes/api/leads/selected"));
+router.use("/leads/delete", require("../routes/api/leads/deleteLeads"));
 //get and search click
 router.use("/get/click", require("../routes/api/clicks/getClicks"));
 router.use("/export/click", require("../routes/api/clicks/export"));

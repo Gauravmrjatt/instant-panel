@@ -11,6 +11,7 @@ import {
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 const UpdatesList = ({ rows }) => {
   return (
@@ -33,10 +34,13 @@ const UpdatesList = ({ rows }) => {
 
 const UpdateSelection = ({ selection }) => {
   const [isClose, setIsClose] = useState(true);
+  const [isClose2, setIsClose2] = useState(true);
   const [visible, setVisible] = useState(false);
+  const [visible2, setVisible2] = useState(false);
   const [update, setUpdate] = useState("");
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [loading2, setLoading2] = useState(false);
   const [error, setError] = useState(null);
 
   // Handle status selection
@@ -47,8 +51,10 @@ const UpdateSelection = ({ selection }) => {
 
   // Close the modal
   const closeHandler = () => {
+    setVisible2(false);
     setVisible(false);
     setIsClose(true); // Reset modal closability
+    setIsClose2(true); // Reset modal closability
     setCount(0); // Reset progress count
     setError(null); // Reset error state
   };
@@ -78,13 +84,34 @@ const UpdateSelection = ({ selection }) => {
       setIsClose(true); // Allow closing modal after completion
     }
   };
+  const handleDeletes = async () => {
+    setLoading2(true); // Start loading state
+    setIsClose2(false); // Disable close button while processing
+
+    try {
+      await axios.post("/leads/delete", {
+        selection,
+      });
+      toast.success("Deleted !")
+    } finally {
+      setLoading2(false); // End loading state
+      setIsClose2(true); // Allow closing modal after completion
+      closeHandler()
+    }
+  }
   const percentage =
     selection.length > 0 ? Math.round((count / selection.length) * 100) : 0;
   return (
     <>
-      <div>
-        <Button>Delete selected</Button>
+      <div style={{
+        "marginBottom": '5px'
+      }}>With selected :</div>
+      <div style={{
+        "marginBottom": "10px"
+      }}>
+        <Button onPress={() => setVisible2(true)} color="error">Delete selected ({selection.length})</Button>
       </div>
+      <hr />
       <Radio.Group
         orientation="horizontal"
         label="With selected"
@@ -104,7 +131,6 @@ const UpdateSelection = ({ selection }) => {
           Rejected
         </Radio>
       </Radio.Group>
-
       <Modal
         scroll
         preventClose
@@ -172,6 +198,77 @@ const UpdateSelection = ({ selection }) => {
               <Loading type="points-opacity" color="currentColor" size="sm" />
             ) : (
               "UPDATE ALL"
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      <Modal
+        scroll
+        preventClose
+        closeButton={isClose2}
+        blur
+        aria-labelledby="modal-title"
+        open={visible2}
+        onClose={closeHandler}
+      >
+        <Modal.Header>
+          <Text id="modal-title" size={18}>
+            Are You{" "}
+            <Text b size={18}>
+              Sure?
+            </Text>
+          </Text>
+        </Modal.Header>
+        <Modal.Body>
+          <Text>
+            Deleting{"   "}
+            <Text b size={18}>
+              {update == "Approved" && (
+                <Badge enableShadow disableOutline color="success">
+                  Approved
+                </Badge>
+              )}
+              {update == "Pending" && (
+                <Badge enableShadow disableOutline color="warning">
+                  Pending
+                </Badge>
+              )}
+              {update == "Rejected" && (
+                <Badge enableShadow disableOutline color="error">
+                  Rejected
+                </Badge>
+              )}
+            </Text>
+          </Text>
+          <UpdatesList rows={selection} />
+          {error && <Text color="error">{error}</Text>}
+        </Modal.Body>
+        <Modal.Footer>
+          {count > 0 && (
+            <Text>
+              {count}/{selection.length}
+            </Text>
+          )}
+          <Progress striped color="secondary" size="xs" value={percentage} />
+          {isClose && (
+            <>
+              <Button auto light color="error" onPress={closeHandler}>
+                Close
+              </Button>
+            </>
+          )}
+          <Button
+            color="secondary"
+            auto
+            shadow
+            bordered={loading2}
+            disabled={loading2}
+            onPress={handleDeletes}
+          >
+            {loading ? (
+              <Loading type="points-opacity" color="currentColor" size="sm" />
+            ) : (
+              "DELETE ALL"
             )}
           </Button>
         </Modal.Footer>
