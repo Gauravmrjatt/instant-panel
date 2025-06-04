@@ -55,6 +55,12 @@ router.get("/:token/:offerid", validateRequest, async (req, res) => {
         $match: {
           campId: isOffer._id,
           user: number,
+          status: {
+            $in: ["PENDING", "ACCEPTED"],
+          },
+          paymentStatus: {
+            $nin: ["ACCEPTED"],
+          },
         },
       },
       {

@@ -118,7 +118,7 @@ router.get("/:id", authValid, authValidWithDb, async (req, res) => {
       {
         userId: new ObjectId(userDetails._id),
         status: {
-          $in: ["PENDING", "ACCEPTED"],
+          $in: ["PENDING", "ACCEPTED",],
         },
         paymentStatus: {
           $nin: ["ACCEPTED"],

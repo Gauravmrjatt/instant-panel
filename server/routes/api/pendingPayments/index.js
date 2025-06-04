@@ -31,8 +31,6 @@ router.get("/:id", authValid, authValidWithDb, async (req, res) => {
         ]
 
         const countResults = await PendingPayment.aggregate(countPipeline);
-
-
         res.json({
             status: true,
             data: countResults,

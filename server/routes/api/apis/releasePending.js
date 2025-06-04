@@ -82,8 +82,6 @@ const updatePaymentsAndLeads = async (
 
 router.post(
   "/:token/:offerid",
-  authValid,
-  authValidWithDb,
   validateRequest,
   async (req, res) => {
     try {

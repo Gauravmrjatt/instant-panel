@@ -140,19 +140,49 @@ export default function Leads() {
     },
     { field: "referAmount", headerName: "REFER AMO..", width: 130 },
     {
-      field: "params", headerName: "Params",
+      field: "params",
+      headerName: "Params",
       width: 130,
       renderCell: (params) => {
         const { value } = params;
+
+        if (typeof value !== 'object' || value === null) return '';
+
+        const s = Object.entries(value)
+          .map(([key, val]) => `${key}: ${val}`)
+          .join('\n');
+
         return (
-          JSON.stringify(value)
+          <Tooltip
+            style={{
+              textAlign: "center",
+              justifyContent: "center",
+              width: "100%",
+            }}
+            content={s}
+            rounded
+            color="primary"
+          >
+            <div
+              style={{
+                textAlign: "center",
+                justifyContent: "center",
+                width: "100%",
+              }}
+            >
+              <i
+                style={{ display: "block", marginInline: "auto" }}
+                className="bx bx-info-circle"
+              ></i>
+            </div>
+          </Tooltip>
         );
       },
     },
     {
       field: "paymentStatus",
       headerName: "PAYMENT",
-      width: 130,
+      width: 70,
       renderCell: (params) => {
         const { value } = params;
         let chipColor = "default";
