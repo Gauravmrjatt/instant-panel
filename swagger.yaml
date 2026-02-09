@@ -1,0 +1,1674 @@
+openapi: 3.0.3
+info:
+  title: Instant Panel - Affiliate Management API
+  description: |
+    Complete API documentation for the Instant Panel affiliate management system.
+    
+    ## Authentication
+    Most endpoints require JWT authentication. Include the JWT token in one of the following ways:
+    - **Cookie:** `jwt_token=<your-token>`
+    - **Header:** `Authorization: Bearer <your-token>`
+    
+    ## Base URL
+    - Development: `http://localhost:3000`
+    - Production: `https://your-domain.com`
+    
+    ## Features
+    - Campaign management and tracking
+    - Click tracking with device detection
+    - Lead conversion and management
+    - Payment processing with RabbitMQ
+    - Real-time notifications via Telegram
+    - Prometheus metrics monitoring
+    
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+
+servers:
+  - url: http://localhost:3000
+    description: Development server
+  - url: https://api.cashinmedia.in
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User authentication and session management
+  - name: Campaigns
+    description: Campaign CRUD operations
+  - name: Tracking
+    description: Click tracking and conversion
+  - name: Leads
+    description: Lead management and status updates
+  - name: Payments
+    description: Payment processing and history
+  - name: Clicks
+    description: Click data retrieval and export
+  - name: Dashboard
+    description: Dashboard statistics and analytics
+  - name: User Management
+    description: User profile and settings
+  - name: Ban Management
+    description: Number banning and unbanning
+  - name: Gateway Settings
+    description: Payment gateway configuration
+  - name: Postback
+    description: Postback URL management
+  - name: Telegram Alerts
+    description: Telegram notification settings
+  - name: Custom Amounts
+    description: Custom amount configuration
+  - name: Reports
+    description: Reporting and analytics
+  - name: Billing
+    description: Billing information
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: jwt_token
+
+  schemas:
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        name:
+          type: string
+          example: "John Doe"
+        userName:
+          type: string
+          example: "johndoe"
+        userId:
+          type: string
+          example: "USR123456"
+        email:
+          type: string
+          format: email
+          example: "john@example.com"
+        phone:
+          type: number
+          example: 9876543210
+        profileImg:
+          type: string
+          example: "/assets/img/avatars/1.jpg"
+        premium:
+          type: boolean
+          example: false
+        userType:
+          type: string
+          enum: [affiliate, admin]
+          example: "affiliate"
+        userStatus:
+          type: string
+          enum: [active, inactive, suspended]
+          example: "active"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Campaign:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        userId:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        user:
+          type: string
+          example: "USR123456"
+        name:
+          type: string
+          example: "Summer Sale Campaign"
+        offerID:
+          type: number
+          example: 12345
+        campStatus:
+          type: boolean
+          example: true
+        paytm:
+          type: boolean
+          example: true
+        ip:
+          type: boolean
+          example: false
+        same:
+          type: boolean
+          example: false
+        tracking:
+          type: string
+          example: "https://example.com/track?click_id={click_id}"
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+        createdAt:
+          type: string
+          format: date-time
+
+    Event:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Registration"
+        user:
+          type: number
+          example: 10
+        refer:
+          type: number
+          example: 5
+        userComment:
+          type: string
+          example: "User registration bonus"
+        referComment:
+          type: string
+          example: "Referral bonus"
+        caps:
+          type: number
+          example: 1000
+        dailyCaps:
+          type: number
+          example: 100
+        eventNumber:
+          type: number
+          example: 1
+        time:
+          type: number
+          example: 300
+        payMode:
+          type: string
+          enum: [auto, manual]
+          example: "auto"
+
+    Click:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        userId:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        campId:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        click:
+          type: string
+          example: "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
+        user:
+          type: string
+          example: "9876543210"
+        refer:
+          type: string
+          example: "9123456789"
+        number:
+          type: string
+          example: "9876543210"
+        ip:
+          type: string
+          example: "192.168.1.1"
+        device:
+          type: object
+          properties:
+            client:
+              type: object
+            os:
+              type: object
+            device:
+              type: object
+        params:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+          format: date-time
+
+    Lead:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        userId:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        campId:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        clickId:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        user:
+          type: string
+          example: "9876543210"
+        userAmount:
+          type: number
+          example: 100
+        referAmount:
+          type: number
+          example: 50
+        refer:
+          type: string
+          example: "9123456789"
+        ip:
+          type: string
+          example: "192.168.1.1"
+        event:
+          type: string
+          example: "Registration"
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+          example: "approved"
+        paymentStatus:
+          type: string
+          enum: [UNKNOWN, PENDING, SUCCESS, FAILED]
+          example: "SUCCESS"
+        payMessage:
+          type: string
+          example: "Payment processed successfully"
+        referPaymentStatus:
+          type: string
+          enum: [UNKNOWN, PENDING, SUCCESS, FAILED]
+          example: "SUCCESS"
+        referPayMessage:
+          type: string
+          example: "Payment processed successfully"
+        message:
+          type: string
+          example: "Lead converted successfully"
+        createdAt:
+          type: string
+          format: date-time
+
+    Payment:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        userId:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        campId:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        clickId:
+          type: string
+          example: "507f1f77bcf86cd799439011"
+        number:
+          type: string
+          example: "9876543210"
+        amount:
+          type: number
+          example: 100
+        comment:
+          type: string
+          example: "Registration bonus"
+        type:
+          type: string
+          enum: [paytm, upi, bank]
+          example: "paytm"
+        response:
+          type: object
+          additionalProperties: true
+        for:
+          type: string
+          enum: [user, refer]
+          example: "user"
+        event:
+          type: string
+          example: "Registration"
+        payUrl:
+          type: string
+          example: "https://gateway.example.com/pay/12345"
+        createdAt:
+          type: string
+          format: date-time
+
+    ApiResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+          example: true
+        msg:
+          type: string
+          example: "Operation successful"
+        data:
+          type: object
+          additionalProperties: true
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: boolean
+          example: false
+        msg:
+          type: string
+          example: "Error message"
+        error:
+          type: string
+          example: "Detailed error information"
+
+paths:
+  # ==================== Authentication ====================
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user with email and password, returns JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+                password:
+                  type: string
+                  format: password
+                  example: "password123"
+      responses:
+        '200':
+          description: Login successful
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...; Path=/; HttpOnly
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  msg:
+                    type: string
+                    example: "Login Successfull"
+                  token:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '400':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: User registration
+      description: Register a new user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - userName
+                - email
+                - password
+                - phone
+              properties:
+                name:
+                  type: string
+                  example: "John Doe"
+                userName:
+                  type: string
+                  example: "johndoe"
+                email:
+                  type: string
+                  format: email
+                  example: "john@example.com"
+                password:
+                  type: string
+                  format: password
+                  example: "password123"
+                phone:
+                  type: number
+                  example: 9876543210
+      responses:
+        '200':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: Registration failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/forget:
+    post:
+      tags:
+        - Authentication
+      summary: Forgot password
+      description: Request password reset link
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+      responses:
+        '200':
+          description: Reset link sent
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /auth/reset:
+    post:
+      tags:
+        - Authentication
+      summary: Reset password
+      description: Reset password with token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+                - password
+              properties:
+                token:
+                  type: string
+                  example: "reset-token-123"
+                password:
+                  type: string
+                  format: password
+                  example: "newpassword123"
+      responses:
+        '200':
+          description: Password reset successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /logout:
+    post:
+      tags:
+        - Authentication
+      summary: User logout
+      description: Invalidate current session
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  # ==================== Campaigns ====================
+  /add/campaign:
+    post:
+      tags:
+        - Campaigns
+      summary: Create new campaign
+      description: Create a new affiliate campaign with events and tracking
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - offerID
+                - tracking
+                - paytm
+                - ip
+                - same
+                - events
+              properties:
+                name:
+                  type: string
+                  example: "Summer Sale Campaign"
+                offerID:
+                  type: number
+                  example: 12345
+                tracking:
+                  type: string
+                  example: "https://example.com/track?click_id={click_id}"
+                paytm:
+                  type: boolean
+                  example: true
+                ip:
+                  type: boolean
+                  example: false
+                same:
+                  type: boolean
+                  example: false
+                crDelay:
+                  type: boolean
+                  example: false
+                delay:
+                  type: string
+                  example: "300"
+                prevEvent:
+                  type: boolean
+                  example: true
+                userPending:
+                  type: boolean
+                  example: false
+                referPending:
+                  type: boolean
+                  example: false
+                events:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Event'
+      responses:
+        '200':
+          description: Campaign created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  msg:
+                    type: string
+                    example: "campaign added successfully"
+                  id:
+                    type: string
+                    example: "507f1f77bcf86cd799439011"
+        '400':
+          description: Campaign creation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /get/campaign:
+    get:
+      tags:
+        - Campaigns
+      summary: Get all campaigns
+      description: Retrieve all campaigns for the authenticated user
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Page number for pagination
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+          description: Number of items per page
+      responses:
+        '200':
+          description: Campaigns retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Campaign'
+                  total:
+                    type: integer
+                    example: 50
+
+  /update/campaign:
+    put:
+      tags:
+        - Campaigns
+      summary: Update campaign
+      description: Update an existing campaign
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - _id
+              properties:
+                _id:
+                  type: string
+                  example: "507f1f77bcf86cd799439011"
+                name:
+                  type: string
+                  example: "Updated Campaign Name"
+                campStatus:
+                  type: boolean
+                  example: false
+                events:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Event'
+      responses:
+        '200':
+          description: Campaign updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /delete/campaign:
+    delete:
+      tags:
+        - Campaigns
+      summary: Delete campaign
+      description: Delete a campaign by ID
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - _id
+              properties:
+                _id:
+                  type: string
+                  example: "507f1f77bcf86cd799439011"
+      responses:
+        '200':
+          description: Campaign deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  # ==================== Tracking ====================
+  /api/v1/click/{camp}:
+    get:
+      tags:
+        - Tracking
+      summary: Track click
+      description: |
+        Track a click for a campaign. This endpoint:
+        1. Validates campaign existence (with Redis caching)
+        2. Generates unique click ID
+        3. Detects device and IP information
+        4. Saves click record to database
+        5. Returns tracking URL with click_id replaced
+      parameters:
+        - name: camp
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Campaign ID
+          example: "507f1f77bcf86cd799439011"
+        - name: aff_click_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Affiliate user identifier
+          example: "9876543210"
+        - name: sub_aff_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Sub-affiliate/referrer identifier
+          example: "9123456789"
+        - name: userIp
+          in: query
+          schema:
+            type: string
+          description: User IP address (optional, auto-detected if not provided)
+          example: "192.168.1.1"
+        - name: number
+          in: query
+          schema:
+            type: string
+          description: User phone number
+          example: "9876543210"
+        - name: device
+          in: query
+          schema:
+            type: string
+          description: User agent string for device detection
+          example: "Mozilla/5.0..."
+      responses:
+        '200':
+          description: Click tracked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  url:
+                    type: string
+                    example: "https://example.com/track?click_id=a1b2c3d4e5f6"
+                  msg:
+                    type: string
+                    example: "Redirect to the given URL.."
+        '400':
+          description: Missing required parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Campaign not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ==================== Postback ====================
+  /api/v1/postback:
+    get:
+      tags:
+        - Postback
+      summary: Postback conversion
+      description: |
+        Receive postback notification for lead conversion.
+        This endpoint processes the conversion and triggers payment via RabbitMQ.
+      parameters:
+        - name: click_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Click ID from tracking
+          example: "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"
+        - name: event
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Event name
+          example: "Registration"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [approved, rejected, pending]
+          description: Conversion status
+          example: "approved"
+      responses:
+        '200':
+          description: Postback processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  # ==================== Leads ====================
+  /get/leads:
+    get:
+      tags:
+        - Leads
+      summary: Get all leads
+      description: Retrieve all leads for the authenticated user
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected]
+        - name: campId
+          in: query
+          schema:
+            type: string
+          description: Filter by campaign ID
+      responses:
+        '200':
+          description: Leads retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Lead'
+                  total:
+                    type: integer
+                    example: 100
+
+  /export/leads:
+    get:
+      tags:
+        - Leads
+      summary: Export leads to CSV
+      description: Export leads data as CSV file
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: campId
+          in: query
+          schema:
+            type: string
+          description: Filter by campaign ID
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: CSV file
+          content:
+            text/csv:
+              schema:
+                type: string
+
+  /update/leadStatus:
+    put:
+      tags:
+        - Leads
+      summary: Update lead status
+      description: Update the status of a lead
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - _id
+                - status
+              properties:
+                _id:
+                  type: string
+                  example: "507f1f77bcf86cd799439011"
+                status:
+                  type: string
+                  enum: [pending, approved, rejected]
+                  example: "approved"
+      responses:
+        '200':
+          description: Lead status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /leads/delete:
+    delete:
+      tags:
+        - Leads
+      summary: Delete leads
+      description: Delete multiple leads by IDs
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ids
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+                  example: ["507f1f77bcf86cd799439011", "507f1f77bcf86cd799439012"]
+      responses:
+        '200':
+          description: Leads deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  # ==================== Payments ====================
+  /get/payments:
+    get:
+      tags:
+        - Payments
+      summary: Get payment history
+      description: Retrieve payment history for the authenticated user
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Payments retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Payment'
+
+  /pay/user:
+    post:
+      tags:
+        - Payments
+      summary: Pay to user
+      description: Initiate payment to a user (admin only)
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - number
+                - amount
+                - comment
+              properties:
+                number:
+                  type: string
+                  example: "9876543210"
+                amount:
+                  type: number
+                  example: 100
+                comment:
+                  type: string
+                  example: "Manual payment"
+      responses:
+        '200':
+          description: Payment initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /get/pendingPayments:
+    get:
+      tags:
+        - Payments
+      summary: Get pending payments
+      description: Retrieve all pending payments
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Pending payments retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+
+  # ==================== Clicks ====================
+  /get/click:
+    get:
+      tags:
+        - Clicks
+      summary: Get all clicks
+      description: Retrieve all clicks for the authenticated user
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: campId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Clicks retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Click'
+
+  /export/click:
+    get:
+      tags:
+        - Clicks
+      summary: Export clicks to CSV
+      description: Export clicks data as CSV file
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: campId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: CSV file
+          content:
+            text/csv:
+              schema:
+                type: string
+
+  /get/click/search:
+    get:
+      tags:
+        - Clicks
+      summary: Search clicks
+      description: Search clicks by various criteria
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: query
+          in: query
+          schema:
+            type: string
+          description: Search query
+        - name: campId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Click'
+
+  # ==================== Dashboard ====================
+  /get/dashboard:
+    get:
+      tags:
+        - Dashboard
+      summary: Get dashboard data
+      description: Retrieve dashboard statistics and analytics
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Dashboard data retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      totalClicks:
+                        type: integer
+                        example: 1000
+                      totalLeads:
+                        type: integer
+                        example: 500
+                      totalPayments:
+                        type: number
+                        example: 50000
+                      conversionRate:
+                        type: number
+                        example: 50.5
+
+  # ==================== User Management ====================
+  /get/user:
+    get:
+      tags:
+        - User Management
+      summary: Get user profile
+      description: Retrieve authenticated user profile
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200':
+          description: User profile retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/User'
+
+  /get/logins:
+    get:
+      tags:
+        - User Management
+      summary: Get login history
+      description: Retrieve login history for the authenticated user
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Login history retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+
+  /upload/user-profile:
+    post:
+      tags:
+        - User Management
+      summary: Upload profile picture
+      description: Upload user profile picture
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Profile picture uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  # ==================== Ban Management ====================
+  /get/number:
+    get:
+      tags:
+        - Ban Management
+      summary: Get banned numbers
+      description: Retrieve all banned phone numbers
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Banned numbers retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+
+  /ban/number:
+    post:
+      tags:
+        - Ban Management
+      summary: Ban a number
+      description: Add a phone number to the ban list
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - number
+              properties:
+                number:
+                  type: string
+                  example: "9876543210"
+                reason:
+                  type: string
+                  example: "Fraud detected"
+      responses:
+        '200':
+          description: Number banned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /ban/unban:
+    post:
+      tags:
+        - Ban Management
+      summary: Unban a number
+      description: Remove a phone number from the ban list
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - number
+              properties:
+                number:
+                  type: string
+                  example: "9876543210"
+      responses:
+        '200':
+          description: Number unbanned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  # ==================== Gateway Settings ====================
+  /get/gateway-settings:
+    get:
+      tags:
+        - Gateway Settings
+      summary: Get gateway settings
+      description: Retrieve payment gateway configuration
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Gateway settings retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+
+  /update/gateway-settings:
+    put:
+      tags:
+        - Gateway Settings
+      summary: Update gateway settings
+      description: Update payment gateway configuration
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                apiKey:
+                  type: string
+                apiSecret:
+                  type: string
+                webhookUrl:
+                  type: string
+      responses:
+        '200':
+          description: Gateway settings updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  # ==================== Postback Settings ====================
+  /get/postback:
+    get:
+      tags:
+        - Postback
+      summary: Get postback settings
+      description: Retrieve postback URL configuration
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Postback settings retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+
+  /update/postback:
+    put:
+      tags:
+        - Postback
+      summary: Update postback settings
+      description: Update postback URL configuration
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                postbackUrl:
+                  type: string
+                  example: "https://example.com/postback"
+      responses:
+        '200':
+          description: Postback settings updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  # ==================== Telegram Alerts ====================
+  /get/telegram-alert:
+    get:
+      tags:
+        - Telegram Alerts
+      summary: Get Telegram alert settings
+      description: Retrieve Telegram notification configuration
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Telegram settings retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+
+  /update/telegram-alert:
+    put:
+      tags:
+        - Telegram Alerts
+      summary: Update Telegram alert settings
+      description: Update Telegram notification configuration
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                chatId:
+                  type: number
+                  example: 123456789
+                enabled:
+                  type: boolean
+                  example: true
+      responses:
+        '200':
+          description: Telegram settings updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  # ==================== Reports ====================
+  /get/reports:
+    get:
+      tags:
+        - Reports
+      summary: Get reports
+      description: Retrieve analytics reports
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: campId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Reports retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+
+  # ==================== Billing ====================
+  /get/billing:
+    get:
+      tags:
+        - Billing
+      summary: Get billing information
+      description: Retrieve billing and payment summary
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Billing information retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      totalEarnings:
+                        type: number
+                        example: 50000
+                      pendingPayments:
+                        type: number
+                        example: 5000
+                      paidAmount:
+                        type: number
+                        example: 45000
+
+  # ==================== Metrics ====================
+  /metrics:
+    get:
+      tags:
+        - Monitoring
+      summary: Prometheus metrics
+      description: |
+        Retrieve Prometheus metrics for monitoring.
+        Requires bearer token authentication.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Metrics in Prometheus format
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: |
+                  # HELP http_express_req_res_time HTTP express request-response time
+                  # TYPE http_express_req_res_time histogram
+                  http_express_req_res_time_bucket{le="1",method="GET",path="/api/v1/click",status_code="200"} 10
+        '403':
+          description: Forbidden - Invalid or missing token
