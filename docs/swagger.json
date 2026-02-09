@@ -1,0 +1,320 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Affiliate Panel (Instant Panel) API",
+    "description": "API documentation for the Affiliate Management Panel. This panel handles campaign tracking, lead management, and payment processing.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Development server"
+    }
+  ],
+  "tags": [
+    { "name": "Auth", "description": "Authentication and account management" },
+    { "name": "Tracking & Postback", "description": "Endpoints for click tracking and conversion postbacks" },
+    { "name": "Campaigns", "description": "Campaign management" },
+    { "name": "Custom Amounts", "description": "Configure custom payouts for specific users/numbers" },
+    { "name": "Leads", "description": "Lead management and reporting" },
+    { "name": "Clicks", "description": "Click reports and search" },
+    { "name": "Payments", "description": "Payment processing and history" },
+    { "name": "User", "description": "User profile and login information" },
+    { "name": "Settings", "description": "Gateway and Telegram alert settings" },
+    { "name": "Banning", "description": "Number banning management" }
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Login to account",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Success or Failure message" }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Register a new account",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": { "type": "string" },
+                  "email": { "type": "string" },
+                  "password": { "type": "string" },
+                  "phone": { "type": "string" },
+                  "plan": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Account created" }
+        }
+      }
+    },
+    "/auth/forget": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Request password reset email",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Email sent status" }
+        }
+      }
+    },
+    "/auth/reset/:token": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Reset password using token",
+        "parameters": [
+          { "name": "token", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Reset result" }
+        }
+      }
+    },
+    "/logout": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Logout from the system",
+        "responses": { "200": { "description": "Redirected to login" } }
+      }
+    },
+    "/api/v1/click/{camp}": {
+      "get": {
+        "tags": ["Tracking & Postback"],
+        "summary": "Record a campaign click",
+        "parameters": [
+          { "name": "camp", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "aff_click_id", "in": "query", "required": true, "description": "User number", "schema": { "type": "string" } },
+          { "name": "sub_aff_id", "in": "query", "required": true, "description": "Referral number", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Tracking URL returned" }
+        }
+      }
+    },
+    "/api/v1/postback/{PostbackToken}/{event}": {
+      "get": {
+        "tags": ["Tracking & Postback"],
+        "summary": "Fire a postback (conversion)",
+        "parameters": [
+          { "name": "PostbackToken", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "event", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "click", "in": "query", "required": true, "description": "Generated click ID", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Postback result" }
+        }
+      }
+    },
+    "/get/postback": {
+      "get": {
+        "tags": ["Tracking & Postback"],
+        "summary": "Get user's postback URL and token",
+        "security": [{ "cookieAuth": [] }],
+        "responses": { "200": { "description": "Success" } }
+      }
+    },
+    "/update/postback": {
+      "post": {
+        "tags": ["Tracking & Postback"],
+        "summary": "Regenerate postback token",
+        "security": [{ "cookieAuth": [] }],
+        "responses": { "200": { "description": "New token" } }
+      }
+    },
+    "/add/campaign": {
+      "post": {
+        "tags": ["Campaigns"],
+        "summary": "Add a new campaign",
+        "security": [{ "cookieAuth": [] }],
+        "responses": { "200": { "description": "Success" } }
+      }
+    },
+    "/get/campaign": {
+      "get": {
+        "tags": ["Campaigns"],
+        "summary": "Get all campaigns",
+        "security": [{ "cookieAuth": [] }],
+        "responses": { "200": { "description": "List of campaigns" } }
+      }
+    },
+    "/get/campaign/{id}": {
+      "get": {
+        "tags": ["Campaigns"],
+        "summary": "Get a specific campaign",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "security": [{ "cookieAuth": [] }],
+        "responses": { "200": { "description": "Campaign data" } }
+      }
+    },
+    "/update/campaign": {
+      "post": {
+        "tags": ["Campaigns"],
+        "summary": "Update campaign details",
+        "security": [{ "cookieAuth": [] }],
+        "responses": { "200": { "description": "Success" } }
+      }
+    },
+    "/delete/campaign": {
+      "post": {
+        "tags": ["Campaigns"],
+        "summary": "Delete a campaign",
+        "security": [{ "cookieAuth": [] }],
+        "responses": { "200": { "description": "Success" } }
+      }
+    },
+    "/api/v1/custom": {
+      "post": {
+        "tags": ["Custom Amounts"],
+        "summary": "Add custom amount for a number",
+        "security": [{ "cookieAuth": [] }],
+        "responses": { "200": { "description": "Success" } }
+      }
+    },
+    "/get/custom": {
+      "get": {
+        "tags": ["Custom Amounts"],
+        "summary": "Get all custom amounts",
+        "security": [{ "cookieAuth": [] }],
+        "responses": { "200": { "description": "List" } }
+      }
+    },
+    "/api/v1/update/custom/{apikey}": {
+      "post": {
+        "tags": ["Custom Amounts"],
+        "summary": "Upsert custom amount via API key",
+        "parameters": [
+          { "name": "apikey", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": { "description": "Success" } }
+      }
+    },
+    "/get/leads/{campId}": {
+      "get": {
+        "tags": ["Leads"],
+        "summary": "Get leads for a campaign",
+        "parameters": [
+          { "name": "campId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "security": [{ "cookieAuth": [] }],
+        "responses": { "200": { "description": "List of leads" } }
+      }
+    },
+    "/update/leadStatus": {
+      "post": {
+        "tags": ["Leads"],
+        "summary": "Update lead status",
+        "security": [{ "cookieAuth": [] }],
+        "responses": { "200": { "description": "Success" } }
+      }
+    },
+    "/pay/user": {
+      "post": {
+        "tags": ["Payments"],
+        "summary": "Send direct payment to a user",
+        "security": [{ "cookieAuth": [] }],
+        "responses": { "200": { "description": "Payment result" } }
+      }
+    },
+    "/get/payments": {
+      "get": {
+        "tags": ["Payments"],
+        "summary": "Get all payments history",
+        "security": [{ "cookieAuth": [] }],
+        "responses": { "200": { "description": "List of payments" } }
+      }
+    },
+    "/get/dashboard": {
+      "get": {
+        "tags": ["Leads"],
+        "summary": "Get dashboard statistics",
+        "security": [{ "cookieAuth": [] }],
+        "responses": { "200": { "description": "Stats data" } }
+      }
+    },
+    "/get/gateway-settings": {
+      "get": {
+        "tags": ["Settings"],
+        "summary": "Get gateway settings",
+        "security": [{ "cookieAuth": [] }],
+        "responses": { "200": { "description": "Settings" } }
+      }
+    },
+    "/update/gateway-settings": {
+      "post": {
+        "tags": ["Settings"],
+        "summary": "Update gateway settings",
+        "security": [{ "cookieAuth": [] }],
+        "responses": { "200": { "description": "Success" } }
+      }
+    },
+    "/ban/number": {
+      "post": {
+        "tags": ["Banning"],
+        "summary": "Ban a number",
+        "security": [{ "cookieAuth": [] }],
+        "responses": { "200": { "description": "Success" } }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "jwt_token"
+      }
+    }
+  }
+}
