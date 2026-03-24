@@ -32,22 +32,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      # =========================
-      # 🔥 Backend Build
-      # =========================
-      - name: Build & Push Backend
-        uses: docker/build-push-action@v5
-        with:
-          context: ./server
-          file: ./server/Dockerfile
-          push: true
-          tags: |
-            ghcr.io/${{ env.OWNER_LC }}/instant-backend:latest
-            ghcr.io/${{ env.OWNER_LC }}/instant-backend:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
       # =========================
       # 🔥 Frontend Build
       # =========================
