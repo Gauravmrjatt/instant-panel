@@ -16,15 +16,19 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-app.use(cors({
-  origin: process.env.CORS_ORIGIN,
-  credentials: true,
-}));
-console.log(process.env.CORS_ORIGIN || "ni")
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN,
+    credentials: true,
+    exposedHeaders: ["Authorization"],
+  }),
+);
+console.log(process.env.CORS_ORIGIN || "ni");
 // ✅ MongoDB
-mongoose.connect(process.env.DB_URL)
+mongoose
+  .connect(process.env.DB_URL)
   .then(() => console.log("✅ DB Connected.."))
-  .catch(err => console.log("❌ DB Error", err));
+  .catch((err) => console.log("❌ DB Error", err));
 
 // ================= METRICS =================
 const collectDefaultMetrics = promClient.collectDefaultMetrics;
@@ -60,7 +64,7 @@ app.use(
   responseTime((req, res, time) => {
     reqResTime.labels(req.method, req.path, res.statusCode).observe(time);
     totalRequests.labels(req.method, req.path, res.statusCode).inc();
-  })
+  }),
 );
 
 // ================= ROUTES =================

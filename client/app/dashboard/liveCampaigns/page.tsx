@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { useCampaigns, type Campaign } from "@/hooks/useCampaigns";
 import { authFetch } from "@/lib/config";
+import { apiConfig } from "@/lib/config";
 
 import { CampaignStats } from "@/components/campaigns/campaign-stats";
 import { CampaignDrawer } from "@/components/campaigns/campaign-drawer";
@@ -47,7 +48,7 @@ export default function LiveCampaignsPage() {
   const deleteCampaign = async (id: string) => {
     try {
       const res = await authFetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"}/delete/campaign`,
+        `${apiConfig.baseUrl}/delete/campaign`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

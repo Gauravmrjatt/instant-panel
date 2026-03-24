@@ -1,47 +1,45 @@
+version: "3.9"
+
 services:
-  app:
-    image: gauravmrjatt/instant-panel:1.5
-    container_name: instant-panel
+  frontend:
+    image: ghcr.io/gauravmrjatt/instant-frontend:latest
+    container_name: instant-frontend
     ports:
-      - "3000:3000"
-    command: npm run start
+      - "3000:4000"
     env_file:
       - .env
+    depends_on:
+      - backend
+
+  backend:
+    image: ghcr.io/gauravmrjatt/instant-backend:latest
+    container_name: instant-backend
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    environment:
+      - PORT=5000
+      - DB_URL=mongodb://mongo:27017/abc
+      - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - CORS_ORIGIN=http://localhost:3000
     depends_on:
       - mongo
       - redis
       - rabbitmq
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
-    volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
-
-  redis:
-    image: redis:latest
-    container_name: redis
-    ports:
-      - "6380:6379"
-    command: redis-server --appendonly yes
-    volumes:
-      - redis-data:/data
 
   mongo:
     image: mongo:5.0
     container_name: mongodb
-    ports:
-      - "27017:27017" 
+
     environment:
       - MONGO_INITDB_ROOT_USERNAME=rootUser
       - MONGO_INITDB_ROOT_PASSWORD=Aiujgfiuyugsdt8726
+    ports:
+      - "27018:27017"
     volumes:
-      - mongo-data:/data/db 
+      - mongo-data:/data/db
 
   mongo-express:
     image: mongo-express:latest
@@ -57,17 +55,38 @@ services:
       - ME_CONFIG_BASICAUTH_PASSWORD=uygdughfhdfguhdf@37247
       
     depends_on:
-      - mongo 
+      - mongo
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
 
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
     ports:
-      - "9090:9090" 
+      - "9090:9090"
     volumes:
-      - ./abc/prometheus.yml:/etc/prometheus/prometheus.yml 
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
     depends_on:
-      - app 
+      - backend
 
 volumes:
   mongo-data:
