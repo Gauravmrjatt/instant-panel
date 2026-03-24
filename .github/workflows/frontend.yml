@@ -35,17 +35,27 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 🔥 IMPORTANT: Inject API URL at build time
+      # 🔥 CACHE-BUST VARIABLE (CRITICAL)
+      - name: Set cache bust
+        run: echo "CACHE_BUST=${GITHUB_SHA}" >> $GITHUB_ENV
+
+      # 🔥 BUILD (FIXED)
       - uses: docker/build-push-action@v5
         with:
           context: ./client
           file: ./client/Dockerfile
           push: true
+
+          # 🔥 IMPORTANT BUILD ARGS
           build-args: |
             NEXT_PUBLIC_API_URL=https://backend5.logicpay.in
+            CACHE_BUST=${{ env.CACHE_BUST }}
+
           tags: |
             ghcr.io/${{ env.OWNER_LC }}/instant-frontend:latest
             ghcr.io/${{ env.OWNER_LC }}/instant-frontend:${{ github.sha }}
             ghcr.io/${{ env.OWNER_LC }}/instant-frontend:${{ env.VERSION }}
+
+          # ✅ KEEP CACHE BUT SAFE
           cache-from: type=gha
           cache-to: type=gha,mode=max

@@ -429,7 +429,7 @@ export default function LandingPage() {
             </div>
             
             <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} {siteConfig.name}. All rights reserved.
+              &copy; {new Date().getFullYear()} {siteConfig.name}. All rights reserved. v.1.0.0
             </p>
 
             <div className="flex items-center gap-4">
