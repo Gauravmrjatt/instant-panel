@@ -1,92 +1,99 @@
-import { useMutation } from '@tanstack/react-query'
-import { apiConfig } from '@/lib/config'
+import { useMutation } from "@tanstack/react-query";
+import { apiConfig } from "@/lib/config";
 
 interface LoginResponse {
-  status: boolean
-  msg: string
-  token?: string
+  status: boolean;
+  msg: string;
+  token?: string;
 }
 
 interface LoginCredentials {
-  email: string
-  password: string
+  email: string;
+  password: string;
 }
 
 async function login(credentials: LoginCredentials): Promise<LoginResponse> {
   const res = await fetch(`${apiConfig.baseUrl}/auth/login`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(credentials),
-  })
-  const data = await res.json()
+  });
+  const data = await res.json();
   if (!res.ok || data.status === false) {
-    throw new Error(data.msg || 'Login failed')
+    throw new Error(data.msg || "Login failed");
   }
-  return data
+  if (data.token) {
+    localStorage.setItem("token", data.token);
+  }
+  return data;
 }
 
 export function useLogin() {
   return useMutation({
     mutationFn: login,
-  })
+  });
 }
 
 interface RegisterResponse {
-  status: boolean
-  msg: string
-  token?: string
+  status: boolean;
+  msg: string;
+  token?: string;
 }
 
 interface RegisterCredentials {
-  email: string
-  password: string
-  username: string
-  phone: string
-  plan?: string | null
+  email: string;
+  password: string;
+  username: string;
+  phone: string;
+  plan?: string | null;
 }
 
-async function register(credentials: RegisterCredentials): Promise<RegisterResponse> {
+async function register(
+  credentials: RegisterCredentials,
+): Promise<RegisterResponse> {
   const res = await fetch(`${apiConfig.baseUrl}/auth/register`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(credentials),
-  })
+  });
   if (!res.ok) {
-    const error = await res.json()
-    throw new Error(error.msg || 'Registration failed')
+    const error = await res.json();
+    throw new Error(error.msg || "Registration failed");
   }
-  return res.json()
+  const data = await res.json();
+  if (data.token) {
+    localStorage.setItem("token", data.token);
+  }
+  return data;
 }
 
 export function useRegister() {
   return useMutation({
     mutationFn: register,
-  })
+  });
 }
 
 interface ForgetResponse {
-  status: boolean
-  msg: string
+  status: boolean;
+  msg: string;
 }
 
 async function forgetPassword(email: string): Promise<ForgetResponse> {
   const res = await fetch(`${apiConfig.baseUrl}/auth/forget`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email }),
-  })
+  });
   if (!res.ok) {
-    const error = await res.json()
-    throw new Error(error.msg || 'Failed to send reset email')
+    const error = await res.json();
+    throw new Error(error.msg || "Failed to send reset email");
   }
-  return res.json()
+  return res.json();
 }
 
 export function useForgetPassword() {
   return useMutation({
     mutationFn: forgetPassword,
-  })
+  });
 }

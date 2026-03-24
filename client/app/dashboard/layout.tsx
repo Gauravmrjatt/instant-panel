@@ -7,15 +7,37 @@ import {
   sidebarItems,
 } from "@/components/dashboard/sidebar";
 import { MobileNav } from "@/components/dashboard/mobile-nav";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
+  const { user, isLoading, isAuthenticated } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push("/auth/login");
+    }
+  }, [isLoading, isAuthenticated, router]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
   const { isMobile, openMobile, setOpenMobile } = useSidebar();
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [selectedSubItem, setSelectedSubItem] = useState<string | null>(null);

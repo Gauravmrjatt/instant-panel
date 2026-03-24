@@ -3,15 +3,20 @@ export const siteConfig = {
   domain: "https://panel.logicpay.in/",
   help_mail: "help@earningarea.com",
   telegram: "@toolsadda_support",
-}
+};
 
 export const apiConfig = {
-  baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
-}
+  baseUrl: process.env.NEXT_PUBLIC_API_URL || "https://backend5.logicpay.in",
+};
 
 export async function authFetch(url: string, options?: RequestInit) {
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
   return fetch(url, {
     ...options,
-    credentials: 'include',
-  })
+    headers: {
+      ...options?.headers,
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+  });
 }

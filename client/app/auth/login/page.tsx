@@ -1,34 +1,46 @@
-'use client'
+"use client";
 
-import { Aperture, Mail, Loader2 } from 'lucide-react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import toast, { Toaster } from 'react-hot-toast'
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Separator } from '@/components/ui/separator'
-import { siteConfig } from '@/lib/config'
-import { useLogin } from '@/hooks/useAuth'
-import { Testimonials } from '@/components/testimonials'
+import { Aperture, Mail, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import toast, { Toaster } from "react-hot-toast";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { siteConfig } from "@/lib/config";
+import { useLogin } from "@/hooks/useAuth";
+import { Testimonials } from "@/components/testimonials";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
-  const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const login = useLogin()
+  const router = useRouter();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      router.push("/dashboard");
+    }
+  }, [authLoading, isAuthenticated, router]);
+
+  if (authLoading || isAuthenticated) {
+    return null;
+  }
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const login = useLogin();
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    
+    e.preventDefault();
+
     try {
-      const data = await login.mutateAsync({ email, password })
+      const data = await login.mutateAsync({ email, password });
       if (data.status === true) {
-        toast.success(data.msg || 'Login successful!')
-        setTimeout(() => router.push('/dashboard'), 500)
+        toast.success(data.msg || "Login successful!");
+        setTimeout(() => router.push("/dashboard"), 500);
       }
     } catch (error: any) {
-      toast.error(error.message || 'Login failed')
+      toast.error(error.message || "Login failed");
     }
   }
 
@@ -42,7 +54,12 @@ export default function LoginPage() {
           </h1>
 
           <div className="mt-10">
-            <Button className="w-full" size="lg" type="button" variant="outline">
+            <Button
+              className="w-full"
+              size="lg"
+              type="button"
+              variant="outline"
+            >
               Continue with Google
             </Button>
 
@@ -54,7 +71,9 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium">Email or Username</label>
+                <label htmlFor="email" className="text-sm font-medium">
+                  Email or Username
+                </label>
                 <Input
                   id="email"
                   type="email"
@@ -66,8 +85,13 @@ export default function LoginPage() {
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="password" className="text-sm font-medium">Password</label>
-                  <Link href="/auth/forget" className="text-sm text-primary hover:underline">
+                  <label htmlFor="password" className="text-sm font-medium">
+                    Password
+                  </label>
+                  <Link
+                    href="/auth/forget"
+                    className="text-sm text-primary hover:underline"
+                  >
                     Forgot Password?
                   </Link>
                 </div>
@@ -81,10 +105,21 @@ export default function LoginPage() {
                 />
               </div>
               <div className="flex items-center gap-2">
-                <input type="checkbox" id="remember-me" className="rounded border-input" />
-                <label htmlFor="remember-me" className="text-sm">Remember Me</label>
+                <input
+                  type="checkbox"
+                  id="remember-me"
+                  className="rounded border-input"
+                />
+                <label htmlFor="remember-me" className="text-sm">
+                  Remember Me
+                </label>
               </div>
-              <Button type="submit" className="w-full" size="lg" disabled={login.isPending}>
+              <Button
+                type="submit"
+                className="w-full"
+                size="lg"
+                disabled={login.isPending}
+              >
                 {login.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -102,7 +137,10 @@ export default function LoginPage() {
 
           <p className="mt-6 text-center text-muted-foreground text-sm">
             New on our platform?{" "}
-            <Link className="text-foreground hover:underline" href="/auth/register">
+            <Link
+              className="text-foreground hover:underline"
+              href="/auth/register"
+            >
               Create an account
             </Link>
           </p>
@@ -157,7 +195,6 @@ export default function LoginPage() {
           }}
         />
       </div>
-   
     </div>
-  )
+  );
 }
