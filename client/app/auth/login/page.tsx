@@ -54,7 +54,7 @@ export default function LoginPage() {
           </h1>
 
           <div className="mt-10">
-            <Button
+            {/* <Button
               className="w-full"
               size="lg"
               type="button"
@@ -67,16 +67,17 @@ export default function LoginPage() {
               <Separator />
               <span className="text-muted-foreground text-sm">OR</span>
               <Separator />
-            </div>
+            </div> */}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium">
+                <label htmlFor="email" className="text-sm font-medium mb-2">
                   Email or Username
                 </label>
                 <Input
                   id="email"
                   type="email"
+                  className="mt-2"
                   placeholder="Enter your email or username"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -146,9 +147,11 @@ export default function LoginPage() {
           </p>
         </div>
       </div>
-      <div className="relative hidden lg:flex min-h-screen flex-col overflow-hidden bg-muted/50 dark:bg-muted/30">
-        <Testimonials />
-
+      <div className="relative hidden lg:flex min-h-screen flex-col overflow-hidden bg-muted/50 dark:bg-muted/30 justify-center items-center">
+        {/* <Testimonials /> */}
+        <h1 className="text-7xl font-bold text-center text-foreground">
+          Earning Area
+        </h1>
         <div
           className="absolute inset-0 -top-px -left-px -z-1 dark:opacity-70"
           style={{

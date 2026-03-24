@@ -86,7 +86,7 @@ function RegisterForm() {
           </p>
 
           <div className="mt-10">
-            <Button
+            {/* <Button
               className="w-full"
               size="lg"
               type="button"
@@ -99,7 +99,7 @@ function RegisterForm() {
               <Separator />
               <span className="text-muted-foreground text-sm">OR</span>
               <Separator />
-            </div>
+            </div> */}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
@@ -109,6 +109,7 @@ function RegisterForm() {
                 <Input
                   id="username"
                   type="text"
+                  className="mt-2"
                   placeholder="Enter your username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -122,6 +123,7 @@ function RegisterForm() {
                 <Input
                   id="email"
                   type="email"
+                  className="mt-2"
                   placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -137,6 +139,7 @@ function RegisterForm() {
                   type="tel"
                   placeholder="Phone number"
                   value={phone}
+                  className="mt-2"
                   onChange={(e) => setPhone(e.target.value)}
                   required
                 />
@@ -150,6 +153,7 @@ function RegisterForm() {
                   type="password"
                   placeholder="Enter your password"
                   value={password}
+                  className="mt-2"
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
@@ -166,6 +170,7 @@ function RegisterForm() {
                   type="password"
                   placeholder="Confirm your password"
                   value={passwordConfirm}
+                  className="mt-2"
                   onChange={(e) => setPasswordConfirm(e.target.value)}
                   required
                 />
@@ -216,9 +221,11 @@ function RegisterForm() {
           </p>
         </div>
       </div>
-      <div className="relative flex h-full w-full flex-col overflow-hidden bg-muted/50 dark:bg-muted/30">
-        <Testimonials />
-
+      <div className="relative flex h-full w-full flex-col overflow-hidden bg-muted/50 dark:bg-muted/30 items-center justify-center">
+        {/* <Testimonials /> */}
+        <h1 className="text-7xl font-bold text-center text-foreground">
+          Earning Area
+        </h1>
         <div
           className="absolute inset-0 -top-px -left-px -z-1 dark:opacity-70"
           style={{
