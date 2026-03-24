@@ -1,3 +1,4 @@
+# ===== Build Stage =====
 FROM node:20-alpine AS builder
 
 RUN corepack enable
@@ -7,9 +8,14 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install
 
 COPY . .
+
+# 🔥 Build-time env injection
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 RUN pnpm build
 
-
+# ===== Production Stage =====
 FROM node:20-alpine
 
 RUN corepack enable
