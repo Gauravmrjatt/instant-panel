@@ -15,7 +15,7 @@ import { useAuth } from "@/context/AuthContext";
 
 function RegisterForm() {
   const router = useRouter();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, checkAuth } = useAuth();
   const searchParams = useSearchParams();
   const plan = searchParams.get("plan");
 
@@ -64,8 +64,9 @@ function RegisterForm() {
       register.mutateAsync({ email, password, username, phone, plan }),
       {
         loading: "Creating account...",
-        success: (data) => {
-          setTimeout(() => router.push("/dashboard"), 3000);
+        success: async (data) => {
+          await checkAuth();
+          window.location.href = "/dashboard";
           return "Successfully registered!";
         },
         error: (error) => error.message,

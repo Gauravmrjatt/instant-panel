@@ -16,13 +16,12 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-app.use(
-  cors({
-    origin: process.env.CORS_ORIGIN,
-    credentials: true,
-    exposedHeaders: ["Authorization"],
-  }),
-);
+app.use(cors({
+  origin: process.env.CORS_ORIGIN,
+  credentials: true,
+  exposedHeaders: ["Authorization"],
+  allowedHeaders: ["Authorization", "Content-Type"],  // Add this
+}));
 console.log(process.env.CORS_ORIGIN || "ni");
 // ✅ MongoDB
 mongoose

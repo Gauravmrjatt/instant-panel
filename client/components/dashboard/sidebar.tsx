@@ -569,7 +569,7 @@ export function DashboardSidebar({
                     )}
                     <div className="flex-1 text-left min-w-0">
                       <div className="text-sm font-medium truncate">
-                        {user?.name.trim().slice(0, 15) && "..." || <Skeleton className="h-4 w-20" />}
+                        {user?.name.trim().slice(0, 15) || <Skeleton className="h-4 w-20" />}
                       </div>
                       <div className="text-xs text-muted-foreground truncate">
                         {user?.email?.trim() || <Skeleton className="h-3 w-28" />}

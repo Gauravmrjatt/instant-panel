@@ -39,22 +39,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     try {
       const res = await authFetch(`${apiConfig.baseUrl}/get/user`);
+    
       if (res.ok) {
         const data = await res.json();
-        if (data.status) {
+    
+        // Handle different response structures
+        if (data.status === true || data.success === true || data.user) {
+          const userData = data.user || data;
           setUser({
-            userId: data.userId,
-            name: data.name,
-            email: data.email,
-            username: data.username,
-            phone: data.phone,
+            userId: userData.userId || userData.id || userData._id,
+            name: userData.name,
+            email: userData.email,
+            username: userData.username,
+            phone: userData.phone,
           });
         }
       } else {
-        localStorage.removeItem("token");
+        console.log("Auth check failed, status:", res.status);
+        // Don't remove token - just keep user as null
       }
     } catch (error) {
-      localStorage.removeItem("token");
+      console.error("Auth check error:", error);
+      // Don't remove token on error - just keep user as null
     } finally {
       setIsLoading(false);
     }

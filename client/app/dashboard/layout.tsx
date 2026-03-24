@@ -16,33 +16,23 @@ import { Menu } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
+  // All hooks must be called unconditionally at the top
   const { user, isLoading, isAuthenticated } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push("/auth/login");
-    }
-  }, [isLoading, isAuthenticated, router]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return null;
-  }
-
   const { isMobile, openMobile, setOpenMobile } = useSidebar();
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [selectedSubItem, setSelectedSubItem] = useState<string | null>(null);
   const [isSubNavOpen, setIsSubNavOpen] = useState(false);
 
+  // Auth redirect effect
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      window.location.href = "/auth/login";
+    }
+  }, [isLoading, isAuthenticated]);
+
+  // Pathname tracking effect
   useEffect(() => {
     const currentItem = sidebarItems.find((item) =>
       item.subItems?.some((sub) => pathname.startsWith(sub.route)),
@@ -61,6 +51,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
     }
   }, [pathname]);
 
+  // Sub nav visibility effect
   useEffect(() => {
     setIsSubNavOpen(
       !!(
@@ -69,6 +60,19 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
       ),
     );
   }, [activeSection]);
+
+  // Early return AFTER all hooks
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   const activeItemData = sidebarItems.find((item) => item.id === activeSection);
 

@@ -15,7 +15,7 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, checkAuth } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const login = useLogin();
@@ -37,7 +37,8 @@ export default function LoginPage() {
       const data = await login.mutateAsync({ email, password });
       if (data.status === true) {
         toast.success(data.msg || "Login successful!");
-        setTimeout(() => router.push("/dashboard"), 500);
+        await checkAuth();
+        window.location.href = "/dashboard";
       }
     } catch (error: any) {
       toast.error(error.message || "Login failed");

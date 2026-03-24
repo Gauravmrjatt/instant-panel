@@ -1,13 +1,8 @@
+var details = require("../myDetails.json");
+var jwt = require("jsonwebtoken");
+const User = require("../models/Users");
 const authValid = (req, res, next) => {
-  if (!req || !req.body || !req.query || !req.headers) {
-    return res.json({
-      status: false,
-      msg: "You need Authentication to access this page",
-    });
-  }
-
-  var details = require("../myDetails.json");
-  var jwt = require("jsonwebtoken");
+ 
   const token =
     req.cookies.jwt_token ||
     req.headers["authorization"]?.split(" ")[1] ||
@@ -34,7 +29,7 @@ const authValid = (req, res, next) => {
 };
 
 const authValidWithDb = async (req, res, next) => {
-  const User = require("../models/Users");
+
   const UserDbData = await User.findOne({ loginToken: req.user.loginToken });
   if (!UserDbData) {
     return res
