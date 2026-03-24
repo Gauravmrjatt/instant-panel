@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const User = require("../../models/Users");
 var jwt = require("jsonwebtoken");
-const myDetails = require("../../../pages/myDetails.json");
+const myDetails = require("../../myDetails.json");
 const { v4: uuidv4 } = require("uuid");
 
 router.post("/", (req, res) => {

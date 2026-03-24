@@ -8,6 +8,7 @@ const handelPayment = require("../../../lib/handelPostBackPayments");
 const Ban = require("../../../models/Ban");
 const Notification = require("../../../lib/handelNotification");
 const CustomAmount = require("../../../models/CustomAmount");
+
 const checkParams = (req, res, next) => {
   const { PostbackToken, event } = req.params;
   const { click } = req.query;
@@ -39,7 +40,12 @@ router.get("/:PostbackToken/:event", checkParams, async (req, res) => {
         msg: "Invalid PostbackToken",
       });
     }
-
+    if(!user.globalPostBack){
+      return res.json({
+        status: false,
+        msg: "Global Postback not allowed",
+      });
+    }
     const clickId = await Click.findOne({
       click,
       userId: user._id,
@@ -201,8 +207,8 @@ router.get("/:PostbackToken/:event", checkParams, async (req, res) => {
     }
     //check in user or refer is ban
     const [isUserBan, isReferBan] = await Promise.all([
-      Ban.findOne({ userId: user._id, number: clickId.user.trim() }),
-      Ban.findOne({ userId: user._id, number: clickId.refer.trim() }),
+      Ban.findOne({ userId: user._id, number: clickId.user.trim().toLowerCase() }),
+      Ban.findOne({ userId: user._id, number: clickId.refer.trim().toLowerCase() }),
     ]);
     if (isUserBan) {
       await saveLead({

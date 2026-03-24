@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { authValid, authValidWithDb } = require("../../../middlewares/auth");
-const myDetails = require("../../../../pages/myDetails.json");
+const myDetails = require("../../../myDetails.json");
 
 const CustomAmount = require("../../../models/CustomAmount");
 router.post("/", authValid, authValidWithDb, async (req, res) => {
@@ -12,8 +12,9 @@ router.post("/", authValid, authValidWithDb, async (req, res) => {
       const isExist = await CustomAmount.findOne({
         campId: camp,
         event: body.event,
-        number: body.number,
-      });
+        number: body.number.trim(),
+      }).collation({ locale: "en", strength: 2 });
+      
       if (isExist) {
         return res.json({
           status: false,

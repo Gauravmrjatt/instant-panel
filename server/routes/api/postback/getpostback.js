@@ -3,7 +3,7 @@ const router = express.Router();
 const { authValid, authValidWithDb } = require("../../../middlewares/auth");
 
 router.get("/", authValid, authValidWithDb, (req, res) => {
-  const { PostbackToken } = req.user.db;
+  const { PostbackToken , globalPostBack } = req.user.db;
 
   // Dynamically construct the domain URL
   const protocol = req.protocol; // http or https
@@ -15,6 +15,7 @@ router.get("/", authValid, authValidWithDb, (req, res) => {
     status: true,
     msg: "Postback key found!",
     key: PostbackToken,
+    isEnabled : globalPostBack,
     url: `${domain}/api/v1/postback/${PostbackToken}/{eventname}?click={click_id}&p1={pass extra params}`,
   });
 });

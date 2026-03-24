@@ -1,6 +1,6 @@
 const express = require("express")
 const router = express.Router()
-const myDetails = require('../../../pages/myDetails.json');
+const myDetails = require('../../myDetails.json');
 const ResetPassword = require('../../models/ResetPassword');
 const { v4: uuidv4 } = require('uuid')
 

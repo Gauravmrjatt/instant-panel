@@ -39,7 +39,7 @@ router.post("/:apikey", async (req, res) => {
       const updatedCustomAmount = await CustomAmount.findOne({
         campId: isCamp._id,
         event: body.event,
-        number: body.number,
+        number: body.number.trim().toLowerCase(),
       }).select(
         "number name event userAmount referAmount userComment referComment createdAt -_id"
       );
@@ -62,7 +62,7 @@ router.post("/:apikey", async (req, res) => {
           isCustom: false,
           msg: "Details found",
           data: {
-            number: body.number,
+            number: body.number.trim().toLowerCase(),
             name: isCamp.name,
             event: body.event,
             userAmount: eventDetails.user,

@@ -1,4 +1,4 @@
-const myDetails = require("../../pages/myDetails.json");
+const myDetails = require("../myDetails.json");
 const { Telegram } = require("telegraf");
 const telegram = new Telegram(myDetails.token);
 const Notification = (id, text) => {

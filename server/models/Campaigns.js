@@ -86,6 +86,11 @@ const CampaignSchema = new Schema({
     type: Boolean,
     default: true,
   },
+  postbackToken: {
+    type: String,
+    unique: true,
+    sparse: true,
+  },
   userPending: {
     type: Boolean,
     default: false,

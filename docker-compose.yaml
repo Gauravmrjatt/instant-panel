@@ -1,18 +1,18 @@
 services:
-  app:
-    build: .
-    container_name: instant-panel
-    ports:
-      - "3000:3000"
-    env_file:
-      - .env
-    volumes:
-      - ./server:/app/server   # Mount the 'server' folder   # Ensure container-only node_modules
-    depends_on:
-      - mongo
-      - redis
-      - rabbitmq
-    # command: npm run st # Ensures Nodemon starts the app
+  # app:
+  #   build: .
+  #   container_name: instant-panel
+  #   ports:
+  #     - "3000:3000"
+  #   env_file:
+  #     - .env
+  #   volumes:
+  #     - ./server:/app/server   # Mount the 'server' folder   # Ensure container-only node_modules
+  #   depends_on:
+  #     - mongo
+  #     - redis
+  #     - rabbitmq
+  #   # command: npm run st # Ensures Nodemon starts the app
 
   mongo:
     image: mongo:5.0
@@ -31,27 +31,27 @@ services:
     volumes:
       - redis-data:/data
 
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    depends_on:
-      - app
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   container_name: prometheus
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ./prometheus.yml:/etc/prometheus/prometheus.yml
+  #   depends_on:
+  #     - app
 
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
-    volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
+  # rabbitmq:
+  #   image: rabbitmq:3-management
+  #   container_name: rabbitmq
+  #   ports:
+  #     - "5672:5672"
+  #     - "15672:15672"
+  #   environment:
+  #     - RABBITMQ_DEFAULT_USER=guest
+  #     - RABBITMQ_DEFAULT_PASS=guest
+  #   volumes:
+  #     - rabbitmq-data:/var/lib/rabbitmq
 
 volumes:
   mongo-data:

@@ -37,7 +37,7 @@ router.post("/:apikey", async (req, res) => {
 
     // Upsert custom amount
     const updatedCustomAmount = await CustomAmount.findOneAndUpdate(
-      { campId: isCamp._id, event: body.event, number: body.number },
+      { campId: isCamp._id, event: body.event, number: body.number.trim().toLowerCase() },
       {
         userId: isUser._id,
         user: isUser.userId,

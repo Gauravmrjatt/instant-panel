@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const myDetails = require("../../pages/myDetails.json");
+const myDetails = require("../myDetails.json");
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -81,6 +81,10 @@ const userSchema = new mongoose.Schema({
   userType: {
     type: String,
     default: "affilate",
+  },
+  globalPostBack: {
+    type: Boolean,
+    default: true,
   },
   userStatus: {
     type: String,

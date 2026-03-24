@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { authValid, authValidWithDb } = require("../../../middlewares/auth");
-const myDetails = require("../../../../pages/myDetails.json");
+const myDetails = require("../../../myDetails.json");
 const Campaign = require("../../../models/Campaigns");
 
 router.post("/", authValid, authValidWithDb, async (req, res) => {

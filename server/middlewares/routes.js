@@ -8,6 +8,10 @@ router.use("/auth/forget", require("../routes/auth/forget"));
 router.use("/auth/reset", require("../routes/auth/reset"));
 //api
 router.use("/api/v1/postback", require("../routes/api/postback/postback"));
+router.use(
+  "/api/v1/campaign/postback",
+  require("../routes/api/postback/campaignPostback")
+);
 
 //tracking
 router.use("/api/v1/click", require("../routes/api/tracking/tracking"));
@@ -20,6 +24,8 @@ router.use("/api/v1/get/custom", require("../routes/api/custom/return.custom"));
 router.use("/api/v1/view/camp", require("../routes/api/apis/getCamp"));
 //fontend api
 router.use("/get/postback", require("../routes/api/postback/getpostback"));
+router.use("/edit/postback", require("../routes/api/postback/editpostback.js"));
+
 router.use(
   "/update/postback",
   require("../routes/api/postback/updatePostBackKey")
@@ -29,6 +35,7 @@ router.use(
   "/get/gateway-settings",
   require("../routes/api/gateway-settings/getGatewaySettings")
 );
+
 router.use(
   "/update/gateway-settings",
   require("../routes/api/gateway-settings/updateGateway-settings")

@@ -4,6 +4,8 @@ const { authValid, authValidWithDb } = require("../../../middlewares/auth");
 const redisClient = require("../../../lib/redisClient");
 
 const Campaign = require("../../../models/Campaigns");
+const { v4: uuidv4 } = require("uuid");
+
 router.post("/", authValid, authValidWithDb, async (req, res) => {
   try {
     const { offerID } = req.body;
@@ -13,6 +15,7 @@ router.post("/", authValid, authValidWithDb, async (req, res) => {
       userId: userDetails._id,
       user: userDetails.userId,
       ...body,
+      postbackToken: uuidv4(),
       uniqueOfferID: {
         offerID,
         user: userDetails.userId,

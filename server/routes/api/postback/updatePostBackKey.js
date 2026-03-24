@@ -1,7 +1,7 @@
 const express = require("express")
 const router = express.Router()
 const { authValid, authValidWithDb } = require("../../../middlewares/auth")
-const myDetails = require("../../../../pages/myDetails.json")
+const myDetails = require("../../../myDetails.json")
 const User = require("../../../models/Users")
 const { v4: uuidv4 } = require('uuid')
 
