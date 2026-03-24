@@ -35,9 +35,15 @@ router.post("/", (req, res) => {
           myDetails.enc_secret,
           {
             expiresIn: "24h",
-          }
+          },
         );
-        res.cookie("jwt_token", token, 24 * 60 * 60 * 1000);
+        res.cookie("jwt_token", token, {
+          expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          sameSite: "none",
+          secure: true,
+          httpOnly: true,
+          path: "/",
+        });
         res.json({
           status: true,
           msg: "Account Successfully Created",

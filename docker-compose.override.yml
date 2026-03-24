@@ -1,43 +1,16 @@
 services:
   app:
-    image: gauravmrjatt/instant-panel:latest
+    image: gauravmrjatt/instant-panel:1.5
     container_name: instant-panel
     ports:
       - "3000:3000"
+    command: npm run start
     env_file:
       - .env
     depends_on:
       - mongo
       - redis
       - rabbitmq
-
-  mongo:
-    image: mongo:5.0
-    container_name: mongodb
-    ports:
-      - "27018:27017"
-    volumes:
-      - mongo-data:/data/db
-
-  redis:
-    image: redis:latest
-    container_name: redis
-    ports:
-      - "6379:6379"
-    command: redis-server --appendonly yes
-    volumes:
-      - redis-data:/data
-
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    depends_on:
-      - app
-
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
@@ -49,6 +22,52 @@ services:
       - RABBITMQ_DEFAULT_PASS=guest
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6380:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+
+  mongo:
+    image: mongo:5.0
+    container_name: mongodb
+    ports:
+      - "27017:27017" 
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=rootUser
+      - MONGO_INITDB_ROOT_PASSWORD=Aiujgfiuyugsdt8726
+    volumes:
+      - mongo-data:/data/db 
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: mongo-express
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongo
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=rootUser
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=Aiujgfiuyugsdt8726
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=uygdughfhdfguhdf@37247
+      
+    depends_on:
+      - mongo 
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090" 
+    volumes:
+      - ./abc/prometheus.yml:/etc/prometheus/prometheus.yml 
+    depends_on:
+      - app 
 
 volumes:
   mongo-data:
