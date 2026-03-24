@@ -68,7 +68,7 @@ app.use(
 );
 
 // ================= ROUTES =================
-app.use("/api", routes);
+app.use("/", routes);
 
 // ================= METRICS ROUTE =================
 app.get("/metrics", async (req, res) => {

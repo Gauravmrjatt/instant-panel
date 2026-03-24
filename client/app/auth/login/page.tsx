@@ -3,7 +3,7 @@
 import { Aperture, Mail, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import toast, { Toaster } from "react-hot-toast";
+import {toast} from "sonner";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,9 @@ import { useAuth } from "@/context/AuthContext";
 export default function LoginPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const login = useLogin();
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -26,9 +29,6 @@ export default function LoginPage() {
   if (authLoading || isAuthenticated) {
     return null;
   }
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const login = useLogin();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

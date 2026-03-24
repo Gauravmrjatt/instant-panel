@@ -6,7 +6,7 @@ export const siteConfig = {
 };
 
 export const apiConfig = {
-  baseUrl: "https://backend5.logicpay.in",
+  baseUrl: process.env.NEXT_PUBLIC_API_URL || "https://backend5.logicpay.in",
 };
 
 export async function authFetch(url: string, options?: RequestInit) {

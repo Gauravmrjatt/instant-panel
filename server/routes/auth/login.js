@@ -67,4 +67,5 @@ router.post("/", async (req, res) => {
     res.json({ status: false, msg: "Fill all account details carefully" });
   }
 });
+
 module.exports = router;

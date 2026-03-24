@@ -3,7 +3,7 @@
 import { Aperture, Mail, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import toast, { Toaster } from "react-hot-toast";
+import { toast } from "sonner";
 import { useState, Suspense, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,16 +16,6 @@ import { useAuth } from "@/context/AuthContext";
 function RegisterForm() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
-
-  useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      router.push("/dashboard");
-    }
-  }, [authLoading, isAuthenticated, router]);
-
-  if (authLoading || isAuthenticated) {
-    return null;
-  }
   const searchParams = useSearchParams();
   const plan = searchParams.get("plan");
 
@@ -36,6 +26,16 @@ function RegisterForm() {
   const [phone, setPhone] = useState("");
 
   const register = useRegister();
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      router.push("/dashboard");
+    }
+  }, [authLoading, isAuthenticated, router]);
+
+  if (authLoading || isAuthenticated) {
+    return null;
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

@@ -21,6 +21,7 @@ export default function ForgetPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [email, setEmail] = useState("");
+  const forget = useForgetPassword();
 
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
@@ -31,7 +32,6 @@ export default function ForgetPage() {
   if (authLoading || isAuthenticated) {
     return null;
   }
-  const forget = useForgetPassword();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
