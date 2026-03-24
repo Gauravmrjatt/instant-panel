@@ -256,7 +256,7 @@ export default function LandingPage() {
           <div className="text-center mb-16">
             <Badge className="mb-4">Features</Badge>
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Everything You Need
+              Everything You Need..
             </h2>
             <p className="mx-auto max-w-2xl text-muted-foreground">
               Powerful features to help you manage your campaigns and payments efficiently.
