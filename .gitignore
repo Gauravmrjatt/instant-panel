@@ -20,7 +20,7 @@
 # misc
 .DS_Store
 *.pem
-
+/client_old
 # debug
 npm-debug.log*
 yarn-debug.log*
