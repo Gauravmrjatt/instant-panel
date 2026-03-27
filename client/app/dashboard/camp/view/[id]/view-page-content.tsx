@@ -1,5 +1,5 @@
 'use client'
-import { Suspense, useState, useEffect } from 'react'
+import { Suspense, useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
@@ -13,6 +13,7 @@ import { authFetch, apiConfig } from '@/lib/config'
 
 import { LeadsTable } from '@/components/leads/leads-table'
 import { useLeads } from '@/hooks/useLeads'
+import type { PaginationState } from '@tanstack/react-table'
 import {
   ArrowLeft,
   Edit,
@@ -57,6 +58,17 @@ export default function ViewCampaignContent({ campaignId }: { campaignId: string
   const router = useRouter()
   const [domain, setDomain] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 20,
+  })
+
+  const handlePaginationChange = useCallback(
+    (updater: PaginationState | ((old: PaginationState) => PaginationState)) => {
+      setPagination((prev) => (typeof updater === 'function' ? updater(prev) : updater))
+    },
+    []
+  )
   const { data: campaign, isLoading: isLoadingCampaign } = useQuery({
     queryKey: ['campaign', campaignId],
     queryFn: async () => {
@@ -75,7 +87,14 @@ export default function ViewCampaignContent({ campaignId }: { campaignId: string
     enabled: !!campaignId && campaignId.length > 0
   })
 
-  const { data: leadsData, isLoading: isLoadingLeads, refetch } = useLeads(campaignId)
+  const { data: leadsResult, isLoading: isLoadingLeads, refetch } = useLeads(
+    campaignId,
+    pagination.pageIndex + 1,
+    pagination.pageSize
+  )
+
+  const leadsData = leadsResult?.data || []
+  const paginationMeta = leadsResult?.pagination || { totalCount: 0, totalPages: 0, page: 1, limit: 20 }
 
   useEffect(() => {
     setDomain(window.location.origin)
@@ -262,10 +281,14 @@ export default function ViewCampaignContent({ campaignId }: { campaignId: string
             </CardHeader>
             <CardContent>
               <LeadsTable
-                data={leadsData || []}
+                data={leadsData}
                 isLoading={isLoadingLeads}
                 campaignId={campaignId}
                 searchQuery={searchQuery}
+                pageCount={paginationMeta.totalPages}
+                totalCount={paginationMeta.totalCount}
+                pagination={pagination}
+                onPaginationChange={handlePaginationChange}
               />
             </CardContent>
           </Card>

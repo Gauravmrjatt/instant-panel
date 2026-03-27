@@ -8,11 +8,11 @@ import {
   flexRender,
   getCoreRowModel,
   useReactTable,
-  getPaginationRowModel,
   getSortedRowModel,
   getFilteredRowModel,
   type SortingState,
   type VisibilityState,
+  type PaginationState,
 } from '@tanstack/react-table'
 import {
   Table,
@@ -55,6 +55,10 @@ interface LeadsTableProps {
   isLoading?: boolean
   campaignId: string
   searchQuery?: string
+  pageCount: number
+  totalCount: number
+  pagination: PaginationState
+  onPaginationChange: (updater: PaginationState | ((old: PaginationState) => PaginationState)) => void
 }
 import {
   Select,
@@ -79,7 +83,16 @@ function getStatusStyle(status: string) {
   return statusStyles[status] || statusStyles.default
 }
 
-export function LeadsTable({ data, isLoading, campaignId, searchQuery = '' }: LeadsTableProps) {
+export function LeadsTable({
+  data,
+  isLoading,
+  campaignId,
+  searchQuery = '',
+  pageCount,
+  totalCount,
+  pagination,
+  onPaginationChange,
+}: LeadsTableProps) {
   const router = useRouter()
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<{ id: string; value: unknown }[]>([])
@@ -375,19 +388,19 @@ export function LeadsTable({ data, isLoading, campaignId, searchQuery = '' }: Le
       columnVisibility,
       rowSelection,
       globalFilter,
+      pagination,
     },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    onPaginationChange: onPaginationChange,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    manualPagination: true,
+    pageCount,
     initialState: {
-      pagination: {
-        pageSize: 10, // 👈 default rows per page
-      },
       columnVisibility: {
         click: false,
       },
@@ -465,24 +478,30 @@ export function LeadsTable({ data, isLoading, campaignId, searchQuery = '' }: Le
         </Table>
       </div>
       <div className="flex items-center gap-2 justify-between">
-        {/* Rows per page */}
-        <Select
-          value={String(table.getState().pagination.pageSize)}
-          onValueChange={(value) => table.setPageSize(Number(value))}
-        >
-          <SelectTrigger className="w-[110px] h-9">
-            <SelectValue placeholder="Rows" />
-          </SelectTrigger>
-
-          <SelectContent>
-            {[5, 10, 20, 50, 100].map((size) => (
-              <SelectItem key={size} value={String(size)}>
-                {size} rows
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {/* Existing pagination */}
+        {/* Rows per page + total count */}
+        <div className="flex items-center gap-3">
+          <Select
+            value={String(pagination.pageSize)}
+            onValueChange={(value) => {
+              onPaginationChange({ pageIndex: 0, pageSize: Number(value) })
+            }}
+          >
+            <SelectTrigger className="w-[110px] h-9">
+              <SelectValue placeholder="Rows" />
+            </SelectTrigger>
+            <SelectContent>
+              {[10, 20, 50, 100].map((size) => (
+                <SelectItem key={size} value={String(size)}>
+                  {size} rows
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <span className="text-sm text-muted-foreground">
+            {totalCount} total leads
+          </span>
+        </div>
+        {/* Pagination controls */}
         <div className='flex gap-2 items-center'>
           <DropdownMenu>
             <DropdownMenuTrigger
@@ -515,7 +534,6 @@ export function LeadsTable({ data, isLoading, campaignId, searchQuery = '' }: Le
             </DropdownMenuContent>
           </DropdownMenu>
           <div className="flex items-center gap-1 border rounded-md">
-
             <Button
               variant="secondary"
               size="sm"
@@ -525,7 +543,7 @@ export function LeadsTable({ data, isLoading, campaignId, searchQuery = '' }: Le
               Previous
             </Button>
             <div className="px-3 py-1 text-sm">
-              Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+              Page {pagination.pageIndex + 1} of {pageCount}
             </div>
             <Button
               variant="secondary"

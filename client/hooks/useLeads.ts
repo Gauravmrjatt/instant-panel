@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { apiConfig, authFetch } from '@/lib/config'
 
 export interface LeadData {
@@ -22,23 +22,48 @@ interface LeadsResponse {
   status: boolean
   msg: string
   count?: number
+  totalCount: number
+  totalPages: number
+  page: number
+  limit: number
   data: LeadData[]
 }
 
-export function useLeads(campaignId: string) {
-  return useQuery<LeadData[]>({
-    queryKey: ['leads', campaignId],
+export interface LeadsPaginationMeta {
+  totalCount: number
+  totalPages: number
+  page: number
+  limit: number
+}
+
+export function useLeads(campaignId: string, page: number = 1, limit: number = 20) {
+  return useQuery<{ data: LeadData[]; pagination: LeadsPaginationMeta }>({
+    queryKey: ['leads', campaignId, page, limit],
     queryFn: async () => {
-      const res = await authFetch(`${apiConfig.baseUrl}/get/leads/${campaignId}`)
+      const res = await authFetch(
+        `${apiConfig.baseUrl}/get/leads/${campaignId}?page=${page}&limit=${limit}`
+      )
       const json: LeadsResponse = await res.json()
       if (!json.status) {
-        return []
+        return {
+          data: [],
+          pagination: { totalCount: 0, totalPages: 0, page: 1, limit },
+        }
       }
-      return json.data.map((row) => ({ ...row, id: row._id || row.id }))
+      return {
+        data: json.data.map((row) => ({ ...row, id: row._id || row.id })),
+        pagination: {
+          totalCount: json.totalCount,
+          totalPages: json.totalPages,
+          page: json.page,
+          limit: json.limit,
+        },
+      }
     },
     enabled: !!campaignId && campaignId.length > 0,
     retry: 1,
     refetchOnWindowFocus: false,
+    placeholderData: keepPreviousData,
   })
 }
 
