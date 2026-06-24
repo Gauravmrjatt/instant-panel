@@ -46,7 +46,7 @@ interface ClickSearchResponse {
 }
 
 export async function searchClicks(data: string[]): Promise<ClickSearchResponse> {
-  const res = await authFetch(`${apiConfig.baseUrl}/get/click/search`, {
+  const res = await authFetch(`${apiConfig.baseUrl}/api/v1/clicks/search`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ data }),

@@ -229,6 +229,7 @@ export default function AddCampaignsPage() {
             variant="outline"
             size="icon"
             render={<Link href="/dashboard/liveCampaigns" />}
+            aria-label="Back to campaigns"
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -701,6 +702,7 @@ export default function AddCampaignsPage() {
                       size="icon"
                       className="text-destructive hover:text-destructive"
                       onClick={() => deleteEvent(index)}
+                      aria-label="Delete event"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -781,6 +783,7 @@ export default function AddCampaignsPage() {
                     size="icon"
                     className="h-4 w-4 p-0 hover:text-destructive"
                     onClick={() => deleteIP(ipAddress)}
+                    aria-label="Delete IP address"
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>

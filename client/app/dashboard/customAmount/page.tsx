@@ -60,7 +60,7 @@ export default function CustomAmountPage() {
   const { data: campaignsData, isLoading: loadingCampaigns } = useQuery({
     queryKey: ['campaigns'],
     queryFn: async () => {
-      const res = await authFetch(`${apiConfig.baseUrl}/get/campaign`)
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/campaigns`)
       return res.json()
     },
   })
@@ -80,7 +80,7 @@ export default function CustomAmountPage() {
         userComment: formData.userComment,
         referPayment: formData.referPayment,
       }
-      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/custom`, {
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/custom-amounts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -136,7 +136,7 @@ export default function CustomAmountPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" render={<Link href="/dashboard" />}>
+        <Button variant="outline" size="icon" render={<Link href="/dashboard" />} aria-label="Back to dashboard">
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>

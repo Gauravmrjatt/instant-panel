@@ -60,7 +60,7 @@ interface CreateCampaignResponse {
 }
 
 async function createCampaign(data: Partial<Campaign>): Promise<CreateCampaignResponse> {
-  const res = await authFetch(`${apiConfig.baseUrl}/add/campaign`, {
+  const res = await authFetch(`${apiConfig.baseUrl}/api/v1/campaigns`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -79,7 +79,7 @@ export function useCreateCampaign() {
 }
 
 async function getPostback() {
-  const res = await authFetch(`${apiConfig.baseUrl}/get/postback`)
+  const res = await authFetch(`${apiConfig.baseUrl}/api/v1/postback/config`)
   if (!res.ok) throw new Error('Failed to fetch postback')
   return res.json()
 }
@@ -97,7 +97,7 @@ interface CampaignListResponse {
 }
 
 async function getCampaigns(): Promise<CampaignListResponse> {
-  const res = await authFetch(`${apiConfig.baseUrl}/get/campaign`)
+  const res = await authFetch(`${apiConfig.baseUrl}/api/v1/campaigns`)
   if (!res.ok) throw new Error('Failed to fetch campaigns')
   return res.json()
 }
@@ -110,10 +110,8 @@ export function useCampaigns() {
 }
 
 async function deleteCampaign(_id: string): Promise<{ status: boolean; msg: string }> {
-  const res = await authFetch(`${apiConfig.baseUrl}/delete/campaign`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ _id }),
+  const res = await authFetch(`${apiConfig.baseUrl}/api/v1/campaigns/${_id}`, {
+    method: 'DELETE',
   })
   if (!res.ok) {
     const error = await res.json()

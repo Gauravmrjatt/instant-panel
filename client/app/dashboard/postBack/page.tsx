@@ -52,15 +52,15 @@ export default function PostBackPage() {
   const { data: postback, isLoading } = useQuery({
     queryKey: ["postback"],
     queryFn: async () => {
-      const res = await authFetch(`${apiConfig.baseUrl}/get/postback`);
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/postback/config`);
       return res.json();
     },
   });
 
   const togglePostback = useMutation({
     mutationFn: async (enabled: boolean) => {
-      const res = await authFetch(`${apiConfig.baseUrl}/edit/postback`, {
-        method: "POST",
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/postback/config`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled }),
       });
@@ -84,7 +84,7 @@ export default function PostBackPage() {
 
   const resetPostback = useMutation({
     mutationFn: async () => {
-      const res = await authFetch(`${apiConfig.baseUrl}/update/postback`, {
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/postback/config/regenerate-token`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });

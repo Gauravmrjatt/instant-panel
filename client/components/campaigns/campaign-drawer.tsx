@@ -163,13 +163,13 @@ export function CampaignDrawer({ campaign, open, onOpenChange, onDelete }: Campa
               Export
             </h3>
             <div className="flex gap-4 justify-center items-center">
-              <Link className='flex-1 flex items-center justify-center bg-primary p-2 rounded-lg' href={`${apiConfig.baseUrl}/export/leads/${campaign._id}`} target="_blank" rel="noopener noreferrer" >
+              <Link className='flex-1 flex items-center justify-center bg-primary p-2 rounded-lg' href={`${apiConfig.baseUrl}/api/v1/campaigns/${campaign._id}/leads/export`} target="_blank" rel="noopener noreferrer" >
 
                 <Download className="mr-2 h-4 w-4" />
                 Export Leads
 
               </Link>
-              <Link className='flex-1 flex items-center justify-center bg-secondary p-2 rounded-lg' href={`${apiConfig.baseUrl}/export/click/${campaign._id}`} target="_blank" rel="noopener noreferrer" >
+              <Link className='flex-1 flex items-center justify-center bg-secondary p-2 rounded-lg' href={`${apiConfig.baseUrl}/api/v1/clicks/${campaign._id}/export`} target="_blank" rel="noopener noreferrer" >
 
                 <Download className="mr-2 h-4 w-4" />
                 Export Clicks

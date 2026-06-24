@@ -232,7 +232,7 @@ export default function DashboardPage() {
             users={
               dash?.topUsers?.map((u) => ({
                 _id: u._id,
-                username: u._id.split("@")[0],
+                username: u._id.split("@")[0] || "",
                 totalAmount: u.totalAmount,
                 paymentCount: u.paymentCount,
               })) || []

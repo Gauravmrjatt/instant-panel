@@ -8,7 +8,7 @@ export interface GatewaySettings {
 }
 
 export async function getGatewaySettings(): Promise<GatewaySettings> {
-  const res = await authFetch(`${apiConfig.baseUrl}/get/gateway-settings`)
+  const res = await authFetch(`${apiConfig.baseUrl}/api/v1/gateway-settings`)
   if (!res.ok) throw new Error('Failed to fetch gateway settings')
   return res.json()
 }
@@ -21,8 +21,8 @@ export function useGatewaySettings() {
 }
 
 export async function updateGatewaySettings(data: GatewaySettings): Promise<{ status: boolean; msg: string }> {
-  const res = await authFetch(`${apiConfig.baseUrl}/update/gateway-settings`, {
-    method: 'POST',
+  const res = await authFetch(`${apiConfig.baseUrl}/api/v1/gateway-settings`, {
+    method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   })

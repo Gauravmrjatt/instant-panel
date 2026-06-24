@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image"
 import React from "react";
 import {
   Carousel,
@@ -102,10 +103,12 @@ export const Testimonials = () => {
                       &quot;{testimonial}&quot;
                     </p>
                     <div className="mt-6 flex items-center gap-2">
-                      <img
+                      <Image
                         alt=""
-                        className="aspect-square h-12 rounded-full"
+                        className="aspect-square h-12 w-12 rounded-full ring-1 ring-black/10 dark:ring-white/10"
                         src={avatar}
+                        width={48}
+                        height={48}
                       />
                       <div className="flex flex-col">
                         <p className="font-semibold text-lg">{name}</p>

@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const { v4: uuidv4 } = require("uuid");
-const Campaign = require("../models/Campaigns");
+const Campaign = require("../modules/campaigns/model");
 require("dotenv").config();
 
 async function migrate() {

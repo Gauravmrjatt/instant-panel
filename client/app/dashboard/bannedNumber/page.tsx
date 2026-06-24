@@ -32,7 +32,7 @@ export default function BannedNumberPage() {
 
   const banMutation = useMutation({
     mutationFn: async (number: string) => {
-      const res = await authFetch(`${apiConfig.baseUrl}/ban/number`, {
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/bans`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ number })

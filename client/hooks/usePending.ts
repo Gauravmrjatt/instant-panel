@@ -20,7 +20,7 @@ export interface PendingPaymentsResponse {
 }
 
 async function getCampaigns(): Promise<{ status: boolean; data: Campaign[] }> {
-  const res = await authFetch(`${apiConfig.baseUrl}/get/campaign`)
+  const res = await authFetch(`${apiConfig.baseUrl}/api/v1/campaigns`)
   if (!res.ok) throw new Error('Failed to fetch campaigns')
   return res.json()
 }
@@ -33,7 +33,7 @@ export function useCampaignsList() {
 }
 
 async function getPendingPayments(campaignId: string): Promise<PendingPaymentsResponse> {
-  const res = await authFetch(`${apiConfig.baseUrl}/get/pendingPayments/${campaignId}`)
+  const res = await authFetch(`${apiConfig.baseUrl}/api/v1/payments/pending?campaignId=${campaignId}`)
   if (!res.ok) throw new Error('Failed to fetch pending payments')
   return res.json()
 }
@@ -47,7 +47,7 @@ export function usePendingPayments(campaignId: string) {
 }
 
 async function updatePending(userId: string, data: { value: string; comment?: string }): Promise<{ status: boolean; msg?: string }> {
-  const res = await authFetch(`${apiConfig.baseUrl}/api/update/pendings/${userId}?comment=${data.comment || ''}`, {
+  const res = await authFetch(`${apiConfig.baseUrl}/api/v1/payments/pending/${userId}/approve?comment=${data.comment || ''}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ value: data.value }),

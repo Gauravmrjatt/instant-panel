@@ -106,7 +106,7 @@ export default function PendingPaymentsPage() {
   const payMutation = useMutation({
     mutationFn: async ({ userId }: { userId: string }) => {
       const res = await authFetch(
-        `${apiConfig.baseUrl}/api/update/pendings/${userId}?comment=${comment || ""}`,
+        `${apiConfig.baseUrl}/api/v1/payments/pending/${userId}/approve?comment=${comment || ""}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -158,7 +158,7 @@ export default function PendingPaymentsPage() {
       Promise.all(
         Array.from(selectedItems).map((userId) =>
           authFetch(
-            `${apiConfig.baseUrl}/api/update/pendings/${userId}?comment=${comment || ""}`,
+            `${apiConfig.baseUrl}/api/v1/payments/pending/${userId}/approve?comment=${comment || ""}`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -440,6 +440,7 @@ export default function PendingPaymentsPage() {
                                 size="icon"
                                 className="h-7 w-7"
                                 onClick={() => handleCopyUPI(item._id)}
+                                aria-label="Copy UPI ID"
                               >
                                 <Copy className="h-3 w-3" />
                               </Button>

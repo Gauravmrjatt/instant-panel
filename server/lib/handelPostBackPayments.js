@@ -1,7 +1,7 @@
-const GetwaySettings = require("../models/GatewaySettings");
+const GetwaySettings = require("../modules/gateway-settings/model");
 const saveLead = require("../lib/saveLead");
 const axios = require("axios");
-const Payment = require("../models/Payments");
+const Payment = require("../modules/payments/model");
 const { Notification, hideMiddleFourLetters } = require("./handelNotification");
 const PendingPayments = require("../lib/savePendingPayments");
 const redisClient = require("../lib/redisClient");

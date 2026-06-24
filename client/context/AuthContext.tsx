@@ -7,6 +7,7 @@ import {
   useEffect,
   ReactNode,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { apiConfig, authFetch } from "@/lib/config";
 
 interface User {
@@ -30,22 +31,22 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   const checkAuth = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setIsLoading(false);
-      return;
-    }
     try {
-      const res = await authFetch(`${apiConfig.baseUrl}/get/user`);
-    
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/users/me`);
+
       if (res.ok) {
         const data = await res.json();
-    
+
         // Handle different response structures
-        if (data.status === true || data.success === true || data.user) {
-          const userData = data.user || data;
+        if (data.status === true || data.success === true || data.user || data.data) {
+          const userData = data.user || data.data || data;
+
+          // Seed React Query cache so useUserProfile() doesn't re-fetch
+          queryClient.setQueryData(["user-profile"], userData);
+
           setUser({
             userId: userData.userId || userData.id || userData._id,
             name: userData.name,
@@ -56,11 +57,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } else {
         console.log("Auth check failed, status:", res.status);
-        // Don't remove token - just keep user as null
       }
     } catch (error) {
       console.error("Auth check error:", error);
-      // Don't remove token on error - just keep user as null
     } finally {
       setIsLoading(false);
     }
@@ -68,13 +67,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      await authFetch(`${apiConfig.baseUrl}/logout`, {
+      await authFetch(`${apiConfig.baseUrl}/api/v1/auth/logout`, {
         method: "POST",
       });
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      localStorage.removeItem("token");
       setUser(null);
       window.location.href = "/auth/login";
     }

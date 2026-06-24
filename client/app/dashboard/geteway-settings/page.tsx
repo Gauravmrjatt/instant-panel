@@ -43,10 +43,10 @@ export default function GatewaySettingsPage() {
 
   useEffect(() => {
     if (settings) {
-      if (settings.url && !customUrl) setCustomUrl(settings.url)
-      if (settings.guid && !eaGuid) setEaGuid(settings.guid)
+      setCustomUrl(settings.url || '')
+      setEaGuid(settings.guid || '')
     }
-  }, [settings, customUrl, eaGuid])
+  }, [settings])
 
   const handleCopy = (text: string, field: string) => {
     navigator.clipboard.writeText(text)

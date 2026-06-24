@@ -67,17 +67,15 @@ export default function ViewCustomPage() {
   const { data: customData, isLoading } = useQuery({
     queryKey: ["custom-amounts"],
     queryFn: async () => {
-      const res = await authFetch(`${apiConfig.baseUrl}/get/custom`);
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/custom-amounts`);
       return res.json();
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await authFetch(`${apiConfig.baseUrl}/delete/custom-amount`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ _id: id }),
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/custom-amounts/${id}`, {
+        method: "DELETE",
       });
       return res.json();
     },
@@ -96,7 +94,7 @@ export default function ViewCustomPage() {
 
   const deleteSelectedMutation = useMutation({
     mutationFn: async (ids: string[]) => {
-      const res = await authFetch(`${apiConfig.baseUrl}/delete/custom-amount`, {
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/custom-amounts/batch-delete`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ data: ids }),

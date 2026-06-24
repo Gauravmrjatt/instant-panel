@@ -1,10 +1,10 @@
-const GetwaySettings = require("../models/GatewaySettings");
-const Lead = require("../models/Leads");
+const GetwaySettings = require("../modules/gateway-settings/model");
+const Lead = require("../modules/leads/model");
 const axios = require("axios");
-const Payment = require("../models/Payments");
-const Ban = require("../models/Ban");
+const Payment = require("../modules/payments/model");
+const Ban = require("../modules/ban/model");
 const Notification = require("../lib/handelNotification");
-const PendingPayment = require("../models/PendingPayments");
+const PendingPayment = require("../modules/payments/model").PendingPayment;
 const handelPayment = async (userId, eventData, lead, tg = "") => {
   try {
     function replaceAllPlaceholders(str, replacements) {

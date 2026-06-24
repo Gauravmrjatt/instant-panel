@@ -20,7 +20,7 @@ export function ClicksChart({ data, totalClicks, isLoading }: ClicksChartProps) 
   const chartOptions: ApexOptions = useMemo(
     () => ({
       chart: {
-        height: 220,
+        height: 300,
         type: 'bar',
         toolbar: { show: false },
         fontFamily: 'inherit',
@@ -46,7 +46,7 @@ export function ClicksChart({ data, totalClicks, isLoading }: ClicksChartProps) 
         },
       },
       xaxis: {
-        categories: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
+        categories: ['6 days ago', '5 days ago', '4 days ago', '3 days ago', '2 days ago', 'Yesterday', 'Today'],
         labels: {
           show: true,
           style: {
@@ -98,7 +98,7 @@ export function ClicksChart({ data, totalClicks, isLoading }: ClicksChartProps) 
   const series = [{ name: 'Clicks', data }]
 
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div>
@@ -113,9 +113,11 @@ export function ClicksChart({ data, totalClicks, isLoading }: ClicksChartProps) 
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <Skeleton className="h-[220px] w-full" />
+          <Skeleton className="h-[300px] w-full" />
         ) : (
-          <ApexChart type="bar" options={chartOptions} series={series} height={220} />
+          <div className="w-full">
+            <ApexChart type="bar" options={chartOptions} series={series} height={300} />
+          </div>
         )}
       </CardContent>
     </Card>

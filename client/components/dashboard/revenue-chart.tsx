@@ -2,10 +2,11 @@
 
 import ApexChart from '@/components/charts/ApexChart'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useTheme } from 'next-themes'
 import type { ApexOptions } from 'apexcharts'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 
 interface RevenueChartProps {
   data: {
@@ -17,21 +18,21 @@ interface RevenueChartProps {
   isLoading?: boolean
 }
 
+type ChartView = 'area' | 'bar'
+
 export function RevenueChart({ data, isLoading }: RevenueChartProps) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === 'dark'
+  const [view, setView] = useState<ChartView>('bar')
 
-  const chartOptions: ApexOptions = useMemo(
+  const baseOptions: ApexOptions = useMemo(
     () => ({
       chart: {
-        height: 320,
-        type: 'area',
+        height: '100%',
         toolbar: { show: false },
         fontFamily: 'inherit',
         background: 'transparent',
       },
-      colors: ['#696cff', '#03c3ec', '#f31260', '#f59e0b'],
-      stroke: { curve: 'smooth', width: 2.5 },
       dataLabels: { enabled: false },
       xaxis: {
         categories: ['6 days ago', '5 days ago', '4 days ago', '3 days ago', '2 days ago', 'Yesterday', 'Today'],
@@ -60,15 +61,6 @@ export function RevenueChart({ data, isLoading }: RevenueChartProps) {
         strokeDashArray: 4,
         padding: { left: 10, right: 10 },
       },
-      fill: {
-        type: 'gradient',
-        gradient: {
-          shadeIntensity: 1,
-          opacityFrom: 0.4,
-          opacityTo: 0.1,
-          stops: [0, 90, 100],
-        },
-      },
       legend: {
         position: 'top',
         horizontalAlign: 'right',
@@ -92,38 +84,103 @@ export function RevenueChart({ data, isLoading }: RevenueChartProps) {
     [isDark]
   )
 
-  const series = [
+  const areaOptions: ApexOptions = useMemo(
+    () => ({
+      ...baseOptions,
+      chart: { ...baseOptions.chart, type: 'area' },
+      colors: ['#696cff', '#03c3ec', '#f31260', '#f59e0b'],
+      stroke: { curve: 'smooth', width: 2.5 },
+      fill: {
+        type: 'gradient',
+        gradient: {
+          shadeIntensity: 1,
+          opacityFrom: 0.4,
+          opacityTo: 0.1,
+          stops: [0, 90, 100],
+        },
+      },
+    }),
+    [baseOptions]
+  )
+
+  const barOptions: ApexOptions = useMemo(
+    () => ({
+      ...baseOptions,
+      chart: { ...baseOptions.chart, type: 'bar', stacked: true },
+      colors: ['#03c3ec', '#f31260', '#f59e0b'],
+      plotOptions: {
+        bar: {
+          borderRadius: 4,
+          borderRadiusApplication: 'end',
+          columnWidth: '50%',
+          horizontal: false,
+        },
+      },
+      fill: {
+        opacity: 1,
+      },
+      legend: {
+        ...baseOptions.legend,
+        position: 'top',
+        horizontalAlign: 'right',
+      },
+    }),
+    [baseOptions]
+  )
+
+  const areaSeries = [
     { name: 'All Leads', data: data.all },
     { name: 'Approved', data: data.approved },
     { name: 'Rejected', data: data.rejected },
     { name: 'Pending', data: data.pending },
   ]
 
+  const barSeries = [
+    { name: 'Approved', data: data.approved },
+    { name: 'Rejected', data: data.rejected },
+    { name: 'Pending', data: data.pending },
+  ]
+
   return (
-    <Card className="col-span-full lg:col-span-2">
+    <Card className="h-full w-full">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-lg">Leads Overview</CardTitle>
             <CardDescription>Last 7 days performance</CardDescription>
           </div>
-          <div className="flex gap-6 text-sm">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-[#696cff]" />
-              <span className="text-muted-foreground">All</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-[#03c3ec]" />
-              <span className="text-muted-foreground">Approved</span>
-            </div>
+          <div className="flex gap-1 rounded-4xl bg-muted p-[3px]">
+            <Button
+              variant={view === 'bar' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setView('bar')}
+              className="rounded-xl px-3 h-7 text-xs"
+            >
+              Bar
+            </Button>
+            <Button
+              variant={view === 'area' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setView('area')}
+              className="rounded-xl px-3 h-7 text-xs"
+            >
+              Area
+            </Button>
           </div>
         </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <Skeleton className="h-[320px] w-full" />
+          <Skeleton className="h-[300px] w-full" />
         ) : (
-          <ApexChart type="area" options={chartOptions} series={series} height={320} />
+          <div className="w-full">
+            <ApexChart
+              type={view}
+              options={view === 'area' ? areaOptions : barOptions}
+              series={view === 'area' ? areaSeries : barSeries}
+              height={300}
+            />
+          </div>
         )}
       </CardContent>
     </Card>

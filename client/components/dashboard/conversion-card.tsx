@@ -26,7 +26,7 @@ export function ConversionCard({
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="h-full">
         <CardHeader>
           <Skeleton className="h-5 w-32" />
           <Skeleton className="h-4 w-24" />
@@ -39,7 +39,7 @@ export function ConversionCard({
   }
 
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg">Conversion Analytics</CardTitle>
         <CardDescription>Performance metrics</CardDescription>
@@ -48,7 +48,7 @@ export function ConversionCard({
         <div className="relative">
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
-              <div className="text-4xl font-bold tracking-tight">{conversionRate}%</div>
+              <div className="text-4xl font-bold tracking-tight tabular-nums">{conversionRate}%</div>
               <p className="text-xs text-muted-foreground">Conversion Rate</p>
             </div>
           </div>
@@ -101,11 +101,11 @@ export function ConversionCard({
         <div className="space-y-2 pt-2 border-t">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Avg Daily Leads</span>
-            <span className="font-medium">{avgDaily.toFixed(0)}</span>
+            <span className="font-medium tabular-nums">{avgDaily.toFixed(0)}</span>
           </div>
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Today&apos;s Leads</span>
-            <Badge variant="secondary" className="font-mono">
+            <Badge variant="secondary" className="font-mono tabular-nums">
               {todayLeads.toLocaleString()}
             </Badge>
           </div>

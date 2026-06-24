@@ -1,87 +1,64 @@
-const express = require("express");
-const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 require("dotenv").config();
-const cookieParser = require("cookie-parser");
-const cors = require("cors");
-const promClient = require("prom-client");
-const responseTime = require("response-time");
 
-const routes = require("./middlewares/routes");
+const app = require("./app");
+const { startWorkers, flushAll, getWorkerTimers } = require("./src/workers");
+const { closeConnection } = require("./lib/rabbitMQ");
 
-const app = express();
-
-// ✅ Middlewares
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cookieParser());
-
-app.use(cors({
-  origin: process.env.CORS_ORIGIN,
-  credentials: true,
-  exposedHeaders: ["Authorization"],
-  allowedHeaders: ["Authorization", "Content-Type"],  // Add this
-}));
-console.log(process.env.CORS_ORIGIN || "ni");
-// ✅ MongoDB
-mongoose
-  .connect(process.env.DB_URL)
-  .then(() => console.log("✅ DB Connected.."))
-  .catch((err) => console.log("❌ DB Error", err));
-
-// ================= METRICS =================
-const collectDefaultMetrics = promClient.collectDefaultMetrics;
-
-const reqResTime = new promClient.Histogram({
-  name: "http_express_req_res_time",
-  help: "HTTP express request-response time",
-  labelNames: ["method", "path", "status_code"],
-});
-
-const totalRequests = new promClient.Counter({
-  name: "http_requests_total",
-  help: "Total number of HTTP requests",
-  labelNames: ["method", "path", "status_code"],
-});
-
-const activeConnections = new promClient.Gauge({
-  name: "http_active_connections",
-  help: "Number of active HTTP connections",
-});
-
-collectDefaultMetrics({ register: promClient.register });
-
-// Active connections
-app.use((req, res, next) => {
-  activeConnections.inc();
-  res.on("finish", () => activeConnections.dec());
-  next();
-});
-
-// Response time
-app.use(
-  responseTime((req, res, time) => {
-    reqResTime.labels(req.method, req.path, res.statusCode).observe(time);
-    totalRequests.labels(req.method, req.path, res.statusCode).inc();
-  }),
-);
-
-// ================= ROUTES =================
-app.use("/", routes);
-
-// ================= METRICS ROUTE =================
-app.get("/metrics", async (req, res) => {
-  try {
-    res.setHeader("Content-Type", promClient.register.contentType);
-    res.send(await promClient.register.metrics());
-  } catch (err) {
-    res.status(500).send("Error");
-  }
-});
-
-// ================= START =================
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`🚀 Express running on http://localhost:${PORT}`);
+let server;
+
+mongoose
+  .connect(process.env.DB_URL, {
+    maxPoolSize: 50,
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+  })
+  .then(() => {
+    console.log("✅ DB Connected..");
+    server = app.listen(PORT, () => {
+      console.log(`🚀 Express running on http://localhost:${PORT}`);
+    });
+    startWorkers();
+  })
+  .catch((err) => console.log("❌ DB Error", err));
+
+async function shutdown(signal) {
+  console.log(`\n${signal} received — starting graceful shutdown`);
+
+  // 1. Stop accepting new requests
+  if (server) {
+    server.close(() => console.log("HTTP server closed"));
+  }
+
+  // 2. Clear flush timers and drain buffers
+  getWorkerTimers().forEach((t) => clearInterval(t));
+  await flushAll();
+  console.log("Worker buffers flushed");
+
+  // 3. Close RabbitMQ
+  try {
+    await closeConnection();
+    console.log("RabbitMQ disconnected");
+  } catch (err) {
+    console.warn("RabbitMQ close error:", err.message);
+  }
+
+  // 4. Disconnect MongoDB
+  try {
+    await mongoose.disconnect();
+    console.log("MongoDB disconnected");
+  } catch (err) {
+    console.warn("MongoDB disconnect error:", err.message);
+  }
+
+  process.exit(0);
+}
+
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled Rejection:", reason);
 });

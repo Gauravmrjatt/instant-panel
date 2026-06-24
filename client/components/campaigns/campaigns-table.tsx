@@ -144,6 +144,7 @@ export function CampaignsTable({ data, isLoading, onView, onDelete, searchQuery 
                 e.stopPropagation()
                 handleCopy(String(row.original.offerID), row.original._id || '')
               }}
+              aria-label="Copy offer ID"
             >
               {copiedId === row.original._id ? (
                 <Check className="h-3 w-3 text-emerald-500" />
@@ -239,6 +240,7 @@ export function CampaignsTable({ data, isLoading, onView, onDelete, searchQuery 
               size="icon"
               className="h-5 w-5"
               render={<a href={tracking} target="_blank" rel="noopener noreferrer" />}
+              aria-label="Open tracking link"
             >
               <ExternalLink className="h-3 w-3" />
             </Button>

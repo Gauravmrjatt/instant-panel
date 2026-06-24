@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { apiConfig, authFetch } from "@/lib/config";
-import { toast, Toaster } from "react-hot-toast";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   Copy,
@@ -54,14 +54,14 @@ export default function ReleasePendingPage() {
   const { data: postback } = useQuery({
     queryKey: ["postback"],
     queryFn: async () => {
-      const res = await authFetch(`${apiConfig.baseUrl}/get/postback`);
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/postback/config`);
       return res.json();
     },
   });
 
   const apiKey = postback?.key || "";
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-  const endpointUrl = `${baseUrl}/api/v1/releasePending/${apiKey}`;
+  const endpointUrl = `${baseUrl}/api/v1/external/release-pending/${apiKey}`;
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -75,7 +75,7 @@ export default function ReleasePendingPage() {
     }
     setIsLoading(true);
     try {
-      const res = await authFetch(`${apiConfig.baseUrl}/api/releasePending`, {
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/external/release-pending/${apiKey}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

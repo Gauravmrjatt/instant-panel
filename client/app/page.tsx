@@ -14,13 +14,18 @@ import {
   Users,
   CreditCard,
   HeadphonesIcon,
-  CheckCircle2,
   ChevronDown,
   Menu,
   X,
   Star,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+
+const ScrollChevron = (
+  <div className="mt-16">
+    <ChevronDown className="h-6 w-6 mx-auto text-muted-foreground animate-bounce" />
+  </div>
+)
 
 const features = [
   {
@@ -122,6 +127,24 @@ export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openFAQ, setOpenFAQ] = useState<number | null>(0)
 
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed')
+          }
+        })
+      },
+      { threshold: 0.1 }
+    )
+
+    const reveals = document.querySelectorAll('.reveal')
+    reveals.forEach((el) => observer.observe(el))
+
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -163,8 +186,9 @@ export default function LandingPage() {
 
           {/* Mobile Menu */}
           <button
-            className="md:hidden"
+            className="md:hidden p-2"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
           >
             {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
@@ -191,31 +215,34 @@ export default function LandingPage() {
       <section className="relative overflow-hidden py-20 md:py-32">
         <div className="absolute inset-0 -z-10">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
-          <div className="absolute top-0 -left-4 w-72 h-72 bg-primary/20 rounded-full blur-[100px]" />
-          <div className="absolute bottom-0 -right-4 w-72 h-72 bg-secondary/20 rounded-full blur-[100px]" />
+          <div className="absolute top-1/4 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-[120px] animate-pulse-glow" />
+          <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-secondary/10 rounded-full blur-[120px] animate-pulse-glow" style={{ animationDelay: '-2s' }} />
+          <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-amber-500/5 rounded-full blur-[100px] animate-float" />
         </div>
         
         <div className="container mx-auto px-4 text-center">
-          <Badge variant="outline" className="mb-6 px-4 py-1.5 text-sm">
-            <Star className="h-3.5 w-3.5 mr-1.5 text-amber-500 fill-amber-500" />
-            Trusted by 50,000+ users across India
-          </Badge>
+          <div className="opacity-0 animate-fade-in-up animate-delay-100">
+            <Badge variant="outline" className="mb-6 px-4 py-1.5 text-sm">
+              <Star className="h-3.5 w-3.5 mr-1.5 text-amber-500 fill-amber-500" />
+              Trusted by 50,000+ users across India
+            </Badge>
+          </div>
           
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
+          <h1 className="text-balance text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 opacity-0 animate-fade-in-up animate-delay-200">
             The Only Enterprise Platform Built for{' '}
-            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-primary via-primary/80 to-secondary bg-clip-text text-transparent">
               Campaign Makers
             </span>
           </h1>
           
-          <p className="mx-auto max-w-2xl text-lg md:text-xl text-muted-foreground mb-10">
+          <p className="text-pretty mx-auto max-w-2xl text-lg md:text-xl text-muted-foreground mb-10 opacity-0 animate-fade-in-up animate-delay-300">
             Get instant payments, real-time analytics, and seamless integration. 
             Start earning faster with our enterprise-grade platform.
           </p>
           
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 opacity-0 animate-fade-in-up animate-delay-400">
             <Link href="/dashboard">
-              <Button size="lg" className="w-full sm:w-auto gap-2 text-lg px-8 h-12">
+              <Button size="lg" className="w-full sm:w-auto gap-2 text-lg px-8 h-12 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-shadow duration-300">
                 Get Started Free <ArrowRight className="h-5 w-5" />
               </Button>
             </Link>
@@ -226,19 +253,19 @@ export default function LandingPage() {
             </Link>
           </div>
 
-          <div className="mt-16">
-            <ChevronDown className="h-6 w-6 mx-auto text-muted-foreground animate-bounce" />
+          <div className="opacity-0 animate-fade-in animate-delay-700">
+            {ScrollChevron}
           </div>
         </div>
       </section>
 
       {/* Stats Section */}
-      <section id="stats" className="py-16 bg-muted/50">
+      <section id="stats" className="py-16 bg-muted/50 noise-overlay">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-3xl md:text-5xl font-bold text-primary mb-2">
+              <div key={index} className={`text-center reveal reveal-delay-${index + 1}`}>
+                <div className="text-3xl md:text-5xl font-bold text-primary mb-2 tabular-nums">
                   {stat.value}
                 </div>
                 <div className="text-sm md:text-base text-muted-foreground">
@@ -254,18 +281,20 @@ export default function LandingPage() {
       <section id="features" className="py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <Badge className="mb-4">Features</Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <div className="reveal">
+              <Badge className="mb-4">Features</Badge>
+            </div>
+            <h2 className="text-balance text-3xl md:text-4xl font-bold mb-4 reveal reveal-delay-1">
               Everything You Need..
             </h2>
-            <p className="mx-auto max-w-2xl text-muted-foreground">
+            <p className="text-pretty mx-auto max-w-2xl text-muted-foreground reveal reveal-delay-2">
               Powerful features to help you manage your campaigns and payments efficiently.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, index) => (
-              <Card key={index} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+              <Card key={index} className={`group hover:shadow-lg transition-[transform,box-shadow] duration-300 hover:-translate-y-1 reveal reveal-delay-${Math.min(index + 1, 6)}`}>
                 <CardContent className="p-6">
                   <div className={`w-12 h-12 rounded-lg ${feature.bg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
                     <feature.icon className={`h-6 w-6 ${feature.color}`} />
@@ -280,17 +309,17 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-br from-primary/10 to-secondary/10">
+      <section className="py-20 bg-gradient-to-br from-primary/10 to-secondary/10 noise-overlay">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+          <h2 className="text-balance text-3xl md:text-4xl font-bold mb-4 reveal reveal-delay-1">
             Ready to Get Started?
           </h2>
-          <p className="mx-auto max-w-2xl text-muted-foreground mb-8">
+          <p className="text-pretty mx-auto max-w-2xl text-muted-foreground mb-8 reveal reveal-delay-2">
             Join thousands of campaign makers who trust us for their payment needs. 
             Start your free trial today.
           </p>
           <Link href="/auth/register">
-            <Button size="lg" className="gap-2 text-lg px-10 h-14">
+            <Button size="lg" className="gap-2 text-lg px-10 h-14 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-shadow duration-300 reveal reveal-delay-3">
               Start Free Trial <ArrowRight className="h-5 w-5" />
             </Button>
           </Link>
@@ -301,18 +330,20 @@ export default function LandingPage() {
       <section id="faq" className="py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <Badge className="mb-4">FAQ</Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <div className="reveal">
+              <Badge className="mb-4">FAQ</Badge>
+            </div>
+            <h2 className="text-balance text-3xl md:text-4xl font-bold mb-4 reveal reveal-delay-1">
               Frequently Asked Questions
             </h2>
-            <p className="mx-auto max-w-2xl text-muted-foreground">
+            <p className="text-pretty mx-auto max-w-2xl text-muted-foreground reveal reveal-delay-2">
               Find answers to common questions about our platform.
             </p>
           </div>
 
           <div className="mx-auto max-w-3xl space-y-4">
             {faqs.map((faq, index) => (
-              <Card key={index} className={`overflow-hidden transition-all ${openFAQ === index ? 'ring-2 ring-primary/50' : ''}`}>
+              <Card key={index} className={`overflow-hidden transition-shadow reveal reveal-delay-${Math.min(index + 1, 6)} ${openFAQ === index ? 'ring-2 ring-primary/50' : ''}`}>
                 <button
                   className="w-full p-6 text-left flex items-center justify-between"
                   onClick={() => setOpenFAQ(openFAQ === index ? null : index)}
@@ -334,18 +365,20 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-20 bg-muted/50">
+      <section className="py-20 bg-muted/50 noise-overlay">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <Badge className="mb-4">Testimonials</Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <div className="reveal">
+              <Badge className="mb-4">Testimonials</Badge>
+            </div>
+            <h2 className="text-balance text-3xl md:text-4xl font-bold mb-4 reveal reveal-delay-1">
               What Our Users Say
             </h2>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
             {testimonials.map((testimonial, index) => (
-              <Card key={index} className="p-6">
+              <Card key={index} className={`p-6 reveal reveal-delay-${index + 1}`}>
                 <CardContent className="p-0">
                   <div className="flex gap-1 mb-4">
                     {[...Array(testimonial.rating)].map((_, i) => (
@@ -368,17 +401,19 @@ export default function LandingPage() {
       <section id="contact" className="py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <Badge className="mb-4">Contact</Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <div className="reveal">
+              <Badge className="mb-4">Contact</Badge>
+            </div>
+            <h2 className="text-balance text-3xl md:text-4xl font-bold mb-4 reveal reveal-delay-1">
               Get in Touch
             </h2>
-            <p className="mx-auto max-w-2xl text-muted-foreground">
+            <p className="text-pretty mx-auto max-w-2xl text-muted-foreground reveal reveal-delay-2">
               Have questions? We are here to help.
             </p>
           </div>
 
           <div className="mx-auto max-w-4xl grid md:grid-cols-2 gap-6">
-            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
+            <Card className="p-8 text-center hover:shadow-lg transition-shadow reveal reveal-delay-1">
               <CardContent className="p-0">
                 <div className="w-14 h-14 mx-auto rounded-full bg-primary/10 flex items-center justify-center mb-4">
                   <HeadphonesIcon className="h-7 w-7 text-primary" />
@@ -395,7 +430,7 @@ export default function LandingPage() {
               </CardContent>
             </Card>
 
-            <Card className="p-8 text-center hover:shadow-lg transition-shadow">
+            <Card className="p-8 text-center hover:shadow-lg transition-shadow reveal reveal-delay-2">
               <CardContent className="p-0">
                 <div className="w-14 h-14 mx-auto rounded-full bg-primary/10 flex items-center justify-center mb-4">
                   <svg className="h-7 w-7 text-primary" viewBox="0 0 24 24" fill="currentColor">
@@ -418,7 +453,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t py-12 bg-muted/30">
+      <footer className="border-t py-12 bg-muted/30 reveal">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2">

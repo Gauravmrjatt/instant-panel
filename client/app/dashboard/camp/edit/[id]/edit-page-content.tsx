@@ -114,7 +114,7 @@ export default function EditCampaignContent({
         queryKey: ["campaign", campaignId],
         queryFn: async () => {
             const res = await authFetch(
-                `${apiConfig.baseUrl}/get/campaign/${campaignId}`,
+                `${apiConfig.baseUrl}/api/v1/campaigns/${campaignId}`,
             );
             return res.json();
         },
@@ -123,10 +123,10 @@ export default function EditCampaignContent({
 
     const updateMutation = useMutation({
         mutationFn: async (data: any) => {
-            const res = await authFetch(`${apiConfig.baseUrl}/update/campaign`, {
-                method: "POST",
+            const res = await authFetch(`${apiConfig.baseUrl}/api/v1/campaigns/${campaignId}`, {
+                method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ _id: campaignId, data }),
+                body: JSON.stringify(data),
             });
             return res.json();
         },
@@ -314,7 +314,7 @@ export default function EditCampaignContent({
                 <CardContent className="space-y-6">
                     <div className="space-y-3">
                         <Label htmlFor="tracking">Click URL</Label>
-                        <CopyButton text={apiConfig.baseUrl + `/api/v1/click/${campaignId}/?aff_click_id={user_number}&sub_aff_id={refer_number}&userIp={ip}&device={user_agent}&number={number}`} />
+                        <CopyButton text={apiConfig.baseUrl + `/api/v1/tracking/${campaignId}/?aff_click_id={user_number}&sub_aff_id={refer_number}&userIp={ip}&device={user_agent}&number={number}`} />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -361,7 +361,7 @@ export default function EditCampaignContent({
                     {campaign.data.postbackToken && (
                         <div className="space-y-3">
                             <Label htmlFor="tracking">Local Postback</Label>
-                            <CopyButton text={apiConfig.baseUrl + `/api/v1/campaign/postback/${campaign.data.postbackToken}/{event}?click={click_id}&p1={pass extra params}`} />
+                            <CopyButton text={apiConfig.baseUrl + `/api/v1/campaigns/${campaignId}/postback/{event}?click={click_id}&p1={pass extra params}`} />
                         </div>
                     )}
                 </CardContent>

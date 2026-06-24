@@ -1,4 +1,4 @@
-const GetwaySettings = require("../models/GatewaySettings");
+const GetwaySettings = require("../modules/gateway-settings/model");
 const axios = require('axios');
 function generateRandomOrderId(length) {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';

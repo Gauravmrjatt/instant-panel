@@ -19,18 +19,18 @@ import {
 interface LoginDevice {
   _id: string
   token: string
-  device: {
-    os: {
-      name: string
+  device?: {
+    os?: {
+      name?: string
     }
-    client: {
-      name: string
+    client?: {
+      name?: string
     }
-    device: {
+    device?: {
       brand?: string
       model?: string
     }
-  }
+  } | null
   ip: string
   createdAt: string
 }
@@ -53,14 +53,14 @@ export default function DevicesPage() {
   const { data, isLoading } = useQuery<{ status: boolean; logins: LoginDevice[] }>({
     queryKey: ['login-devices'],
     queryFn: async () => {
-      const res = await authFetch(`${apiConfig.baseUrl}/get/logins`)
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/users/me/sessions`)
       return res.json()
     },
   })
 
   const deleteMutation = useMutation({
     mutationFn: async (token: string) => {
-      const res = await fetch(`${apiConfig.baseUrl}/logout/${token}?devices=true`, {
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/auth/logout/${token}?devices=true`, {
         credentials: 'include',
       })
       return res.json()
@@ -96,7 +96,7 @@ export default function DevicesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon">
+        <Button variant="outline" size="icon" aria-label="Back to dashboard">
           <Link href="/dashboard">
             <ArrowLeft className="h-4 w-4" />
           </Link>
@@ -124,7 +124,7 @@ export default function DevicesPage() {
                     <div className="p-2 rounded-lg bg-primary/10">
                       <Monitor className="h-4 w-4 text-primary" />
                     </div>
-                    <CardTitle className="text-base">{login.device.os.name}</CardTitle>
+                    <CardTitle className="text-base">{login.device?.os?.name || "Unknown OS"}</CardTitle>
                   </div>
                   <Button
                     variant="ghost"
@@ -132,6 +132,7 @@ export default function DevicesPage() {
                     className="text-destructive hover:text-destructive hover:bg-destructive/10"
                     onClick={() => deleteMutation.mutate(login.token)}
                     disabled={deleteMutation.isPending}
+                    aria-label={`Delete session for ${login.device?.os?.name || "Unknown OS"}`}
                   >
                     {deleteMutation.isPending && deletedToken === login.token ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -143,11 +144,11 @@ export default function DevicesPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium">{login.device.client.name}</p>
+                  <p className="text-sm font-medium">{login.device?.client?.name || "Unknown browser"}</p>
                   <p className="text-sm text-muted-foreground flex items-center gap-2">
                     <Smartphone className="h-3 w-3" />
-                    {login.device.device.brand
-                      ? `${login.device.device.brand} ${login.device.device.model}`
+                    {login.device?.device?.brand
+                      ? `${login.device.device.brand} ${login.device.device.model || ""}`
                       : 'Unknown device'}
                   </p>
                   <p className="text-sm text-muted-foreground flex items-center gap-2">

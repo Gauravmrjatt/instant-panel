@@ -300,6 +300,7 @@ export default function PaymentsPage() {
             size="icon"
             onClick={() => refetch()}
             disabled={isRefetching}
+            aria-label="Refresh payments"
           >
             <RefreshCw
               className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`}
@@ -400,6 +401,7 @@ export default function PaymentsPage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9 w-[200px] md:w-[300px] rounded-lg"
+                  aria-label="Search payments"
                 />
               </div>
             </div>
@@ -512,6 +514,7 @@ export default function PaymentsPage() {
                 size="icon"
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
+                aria-label="Previous page"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -545,6 +548,7 @@ export default function PaymentsPage() {
                 size="icon"
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
+                aria-label="Next page"
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>

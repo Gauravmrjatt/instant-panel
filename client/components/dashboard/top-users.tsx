@@ -36,12 +36,12 @@ export function TopUsers({ users, isLoading }: TopUsersProps) {
     }).format(amount)
 
   const getInitials = (name: string) => {
-    return name
-      .split(/[@\s]/)
-      .map((part) => part.charAt(0))
-      .slice(0, 2)
-      .join('')
-      .toUpperCase()
+    return name?.trim()
+      ?.split(/[@\s]/)
+      ?.map((part) => part.charAt(0))
+      ?.slice(0, 2)
+      ?.join('')
+      ?.toUpperCase() || ''
   }
 
   if (isLoading) {
