@@ -199,15 +199,17 @@ export default function DashboardPage() {
       <Separator />
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <RevenueChart
-          data={{
-            all: dash?.sevenLeads?.all || [],
-            approved: dash?.sevenLeads?.approved || [],
-            rejected: dash?.sevenLeads?.rejected || [],
-            pending: dash?.sevenLeads?.pending || [],
-          }}
-          isLoading={isLoading}
-        />
+        <div className="lg:col-span-2">
+          <RevenueChart
+            data={{
+              all: dash?.sevenLeads?.all || [],
+              approved: dash?.sevenLeads?.approved || [],
+              rejected: dash?.sevenLeads?.rejected || [],
+              pending: dash?.sevenLeads?.pending || [],
+            }}
+            isLoading={isLoading}
+          />
+        </div>
         <CampaignsChart
           camps={dash?.topCamps || []}
           totalCamps={dash?.camp || 0}
@@ -232,7 +234,7 @@ export default function DashboardPage() {
             users={
               dash?.topUsers?.map((u) => ({
                 _id: u._id,
-                username: u._id.split("@")[0] || "",
+                username: u._id?.split("@")[0] || "",
                 totalAmount: u.totalAmount,
                 paymentCount: u.paymentCount,
               })) || []
@@ -251,7 +253,7 @@ export default function DashboardPage() {
           isLoading={isLoading}
         />
 
-        <Card>
+        <Card className="h-full">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg">Quick Stats</CardTitle>
             <CardDescription>Campaign performance summary</CardDescription>

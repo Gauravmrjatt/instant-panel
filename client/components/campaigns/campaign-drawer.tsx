@@ -2,11 +2,24 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useQueryClient } from "@tanstack/react-query"
+import {toast} from "sonner"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import {
   Eye,
   Pencil,
@@ -22,9 +35,12 @@ import {
   AlertCircle,
   CheckCircle2,
   XCircle,
-  Download
+  Download,
+  Hash,
+  Timer,
+  Save,
 } from 'lucide-react'
-import type { Campaign } from '@/hooks/useCampaigns'
+import type { Campaign, CampaignEvent } from '@/hooks/useCampaigns'
 
 interface CampaignDrawerProps {
   campaign: Campaign | null
@@ -39,11 +55,16 @@ const STATUS_CONFIG = {
   inactive: { label: 'Inactive', color: 'bg-slate-400', icon: XCircle },
 }
 
-import { apiConfig } from '@/lib/config'
+import { apiConfig, authFetch } from '@/lib/config'
 
 export function CampaignDrawer({ campaign, open, onOpenChange, onDelete }: CampaignDrawerProps) {
+  const queryClient = useQueryClient()
   const [copied, setCopied] = useState(false)
   const [copiedTracking, setCopiedTracking] = useState(false)
+  const [editingEventIndex, setEditingEventIndex] = useState<number | null>(null)
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [editFormData, setEditFormData] = useState<CampaignEvent | null>(null)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
 
   if (!campaign) return null
 
@@ -55,6 +76,31 @@ export function CampaignDrawer({ campaign, open, onOpenChange, onDelete }: Campa
     } else {
       setCopiedTracking(true)
       setTimeout(() => setCopiedTracking(false), 2000)
+    }
+  }
+
+  const handleSaveEvent = async () => {
+    if (editingEventIndex === null || !editFormData || !campaign._id) return
+
+    const updatedEvents = [...campaign.events]
+    updatedEvents[editingEventIndex] = editFormData
+
+    try {
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/campaigns/${campaign._id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ events: updatedEvents }),
+      })
+      const result = await res.json()
+      if (result.status) {
+        queryClient.invalidateQueries({ queryKey: ['campaigns'] })
+        toast.success('Event updated successfully')
+        setEditDialogOpen(false)
+      } else {
+        toast.error(result.msg || 'Failed to update event')
+      }
+    } catch {
+      toast.error('Failed to update event')
     }
   }
 
@@ -209,6 +255,18 @@ export function CampaignDrawer({ campaign, open, onOpenChange, onDelete }: Campa
                     <Badge variant={event.payMode === 'auto' ? 'default' : 'secondary'}>
                       {event.payMode}
                     </Badge>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => {
+                        setEditingEventIndex(index)
+                        setEditFormData({ ...event })
+                        setEditDialogOpen(true)
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -222,6 +280,242 @@ export function CampaignDrawer({ campaign, open, onOpenChange, onDelete }: Campa
               </div>
             )}
           </div>
+
+          {/* Edit Event Dialog */}
+          <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Pencil className="h-5 w-5 text-amber-500" />
+                  Edit Event
+                </DialogTitle>
+                <DialogDescription>
+                  Update the event details and payout amounts
+                </DialogDescription>
+              </DialogHeader>
+              {editFormData && (
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>Event Name <span className="text-destructive">*</span></Label>
+                    <Input
+                      placeholder="e.g., Install, Signup, Purchase"
+                      value={editFormData.name}
+                      onChange={(e) =>
+                        setEditFormData((prev) =>
+                          prev ? { ...prev, name: e.target.value } : prev
+                        )
+                      }
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1">
+                        User Amount <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        type="number"
+                        placeholder="0.00"
+                        value={editFormData.user}
+                        onChange={(e) =>
+                          setEditFormData((prev) =>
+                            prev ? { ...prev, user: e.target.value } : prev
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1">
+                        Refer Amount <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        type="number"
+                        placeholder="0.00"
+                        value={editFormData.refer}
+                        onChange={(e) =>
+                          setEditFormData((prev) =>
+                            prev ? { ...prev, refer: e.target.value } : prev
+                          )
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <Label>User Comment <span className="text-destructive">*</span></Label>
+                    <Input
+                      placeholder="e.g., Thank you for signing up!"
+                      value={editFormData.userComment}
+                      onChange={(e) =>
+                        setEditFormData((prev) =>
+                          prev ? { ...prev, userComment: e.target.value } : prev
+                        )
+                      }
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Refer Comment <span className="text-destructive">*</span></Label>
+                    <Input
+                      placeholder="e.g., Bonus for referring a friend!"
+                      value={editFormData.referComment}
+                      onChange={(e) =>
+                        setEditFormData((prev) =>
+                          prev ? { ...prev, referComment: e.target.value } : prev
+                        )
+                      }
+                    />
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                      Limits & Controls
+                    </h4>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Hash className="h-4 w-4 text-muted-foreground" />
+                        <Label htmlFor="capSwitch">Total Limit (Caps)</Label>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {editFormData.capSwitch && (
+                          <Input
+                            type="number"
+                            placeholder="Max count"
+                            className="w-24 h-8"
+                            value={editFormData.caps}
+                            onChange={(e) =>
+                              setEditFormData((prev) =>
+                                prev ? { ...prev, caps: e.target.value } : prev
+                              )
+                            }
+                          />
+                        )}
+                        <Switch
+                          id="capSwitch"
+                          checked={editFormData.capSwitch}
+                          onCheckedChange={(checked) =>
+                            setEditFormData((prev) =>
+                              prev ? { ...prev, capSwitch: checked, caps: checked ? prev.caps : "" } : prev
+                            )
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Timer className="h-4 w-4 text-muted-foreground" />
+                        <Label htmlFor="dailySwitch">Daily Limit</Label>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {editFormData.dailySwitch && (
+                          <Input
+                            type="number"
+                            placeholder="Max daily"
+                            className="w-24 h-8"
+                            value={editFormData.dailyCaps || ""}
+                            onChange={(e) =>
+                              setEditFormData((prev) =>
+                                prev ? { ...prev, dailyCaps: e.target.value } : prev
+                              )
+                            }
+                          />
+                        )}
+                        <Switch
+                          id="dailySwitch"
+                          checked={editFormData.dailySwitch || false}
+                          onCheckedChange={(checked) =>
+                            setEditFormData((prev) =>
+                              prev ? { ...prev, dailySwitch: checked, dailyCaps: checked ? prev.dailyCaps : "" } : prev
+                            )
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <Label htmlFor="timeSwitch">Track Next Event After Time</Label>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        {editFormData.timeSwitch && (
+                          <Input
+                            type="number"
+                            placeholder="Minutes"
+                            className="w-24 h-8"
+                            value={editFormData.time}
+                            onChange={(e) =>
+                              setEditFormData((prev) =>
+                                prev ? { ...prev, time: e.target.value } : prev
+                              )
+                            }
+                          />
+                        )}
+                        <Switch
+                          id="timeSwitch"
+                          checked={editFormData.timeSwitch}
+                          onCheckedChange={(checked) =>
+                            setEditFormData((prev) =>
+                              prev ? { ...prev, timeSwitch: checked, time: checked ? prev.time : "" } : prev
+                            )
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <Label>Pay Mode</Label>
+                    <div className="flex gap-2">
+                      <Button
+                        variant={editFormData.payMode === "auto" ? "default" : "outline"}
+                        size="sm"
+                        className="flex-1 gap-2"
+                        onClick={() =>
+                          setEditFormData((prev) =>
+                            prev ? { ...prev, payMode: "auto" } : prev
+                          )
+                        }
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                        Auto
+                      </Button>
+                      <Button
+                        variant={editFormData.payMode === "manual" ? "default" : "outline"}
+                        size="sm"
+                        className="flex-1 gap-2"
+                        onClick={() =>
+                          setEditFormData((prev) =>
+                            prev ? { ...prev, payMode: "manual" } : prev
+                          )
+                        }
+                      >
+                        <Clock className="h-4 w-4" />
+                        Manual
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveEvent} className="gap-2">
+                  <Save className="h-4 w-4" />
+                  Save
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           <Separator />
 
@@ -259,16 +553,42 @@ export function CampaignDrawer({ campaign, open, onOpenChange, onDelete }: Campa
             <Button
               variant="destructive"
               className="w-full gap-2"
-              onClick={() => {
-                if (campaign._id && onDelete) {
-                  onDelete(campaign._id)
-                  onOpenChange(false)
-                }
-              }}
+              onClick={() => setDeleteConfirmOpen(true)}
             >
               <Trash2 className="h-4 w-4" />
               Delete Campaign
             </Button>
+            <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+              <DialogContent className="max-w-sm">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-destructive">
+                    <Trash2 className="h-5 w-5" />
+                    Delete Campaign
+                  </DialogTitle>
+                  <DialogDescription>
+                    Are you sure you want to delete this campaign? This action cannot be undone.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="gap-2">
+                  <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      if (campaign._id && onDelete) {
+                        onDelete(campaign._id)
+                        onOpenChange(false)
+                        setDeleteConfirmOpen(false)
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </SheetContent>

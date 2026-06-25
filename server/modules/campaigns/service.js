@@ -44,7 +44,7 @@ async function updateCampaign(userId, id, data) {
   if (!id) return { status: false, message: "Missing _id field" };
   await Campaign.findByIdAndUpdate({ userId, _id: id }, { ...data });
   await Promise.all([
-    redisClient.setEx(`campaign:${id}`, 3600, JSON.stringify({ _id: id, userId, tracking: data.tracking })),
+    redisClient.del(`campaign:${id}`),
     redisClient.del(`campaigns:${userId}`),
   ]);
   return { status: true, data: {} };
