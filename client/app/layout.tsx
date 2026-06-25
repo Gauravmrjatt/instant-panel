@@ -1,34 +1,20 @@
-import { Geist_Mono, DM_Sans } from "next/font/google"
-import type { Metadata } from "next"
+import { Geist, Geist_Mono, DM_Sans } from "next/font/google"
 
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Providers } from "./providers"
 import { cn } from "@/lib/utils";
+import Script from "next/script";
 
-const dmSans = DM_Sans({subsets:['latin'],variable:'--font-sans', display:'swap'})
-
-const fontMono = Geist_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
-  display: 'swap',
-})
-import { Roboto } from 'next/font/google'
- 
-const roboto = Roboto({
-  weight: '400',
-  subsets: ['latin'],
-})
- 
-import { Geist } from 'next/font/google'
+const dmSans = DM_Sans({subsets:['latin'],variable:'--font-sans'})
  
 const geist = Geist({
   subsets: ['latin'],
 })
-export const metadata: Metadata = {
-  title: "Earning Area - Campaign Management Dashboard",
-  description: "Enterprise-grade campaign management and payment processing platform.",
-}
+const fontMono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+})
 
 export default function RootLayout({
   children,
@@ -39,10 +25,17 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      // className={cn(fontMono.variable, dmSans.variable)}
-      className={geist.className}
+      className={cn("antialiased", fontMono.variable, "font-sans", dmSans.variable, geist.className)}
     >
       <head>
+          <Script
+          src="//unpkg.com/react-scan/dist/auto.global.js"
+          crossOrigin="anonymous"
+          strategy="beforeInteractive"
+        />
+        <meta name="description" content="Instant Panel" />
+        <title>Instant Panel</title>
+        <link rel="icon" href="/favicon.ico" />
         <link rel="preconnect" href="https://backend5.logicpay.in" />
         <link rel="dns-prefetch" href="https://backend5.logicpay.in" />
       </head>

@@ -59,7 +59,6 @@ export function RevenueChart({ data, isLoading }: RevenueChartProps) {
       grid: {
         borderColor: isDark ? '#374151' : '#f3f4f6',
         strokeDashArray: 4,
-        padding: { left: 10, right: 10 },
       },
       legend: {
         position: 'top',
@@ -179,6 +178,7 @@ export function RevenueChart({ data, isLoading }: RevenueChartProps) {
               options={view === 'area' ? areaOptions : barOptions}
               series={view === 'area' ? areaSeries : barSeries}
               height={300}
+              width="100%"
             />
           </div>
         )}
