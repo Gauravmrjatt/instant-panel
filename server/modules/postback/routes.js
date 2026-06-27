@@ -1,6 +1,15 @@
 const router = require("express").Router();
 const ctrl = require("./controller");
 const { authValid, authValidWithDb } = require("../../middlewares/auth");
+const rateLimit = require("express-rate-limit");
+
+const postbackLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 1000,
+  message: { status: false, msg: "Too many postback requests" },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 router.get("/get/postback", authValid, authValidWithDb, ctrl.getConfig);
 router.post("/edit/postback", authValid, authValidWithDb, ctrl.toggleGlobal);

@@ -19,61 +19,57 @@ const QUEUE_NAME = "payment_processing";
       const task = JSON.parse(taskString);
       const { userId, value, totalAmount, comment, clicks, campId } = task;
 
-      try {
-        const payment = await handelPayment(
-          userId,
-          value,
-          totalAmount,
-          comment
-        );
-        console.log(payment);
-        const status = payment.status;
-        const payMessage =
-          payment.statusMessage ||
-          payment.message ||
-          payment.msg ||
-          "no message found";
+      const payment = await handelPayment(
+        userId,
+        value,
+        totalAmount,
+        comment
+      );
+      console.log(payment);
+      const status = payment.status;
+      const payMessage =
+        payment.statusMessage ||
+        payment.message ||
+        payment.msg ||
+        "no message found";
 
-        await Promise.all([
-          PendingPayment.updateMany(
-            {
-              userId: new mongoose.Types.ObjectId(userId),
-              status: { $in: ["PENDING", "ACCEPTED"] },
-              type: "refer",
-              paymentStatus: { $nin: ["ACCEPTED"] },
-              campId: new mongoose.Types.ObjectId(campId),
-              clickId: { $in: clicks },
-            },
-            {
-              status: "ACCEPTED",
-              paymentStatus: status,
-              payMessage,
-              message:
-                "We have processed your request; please check payment status",
-              response: payment,
-            }
-          ),
-          Leads.updateMany(
-            {
-              userId: new mongoose.Types.ObjectId(userId),
-              status: "Approved",
-              referPaymentStatus: "PENDING",
-              campId: new mongoose.Types.ObjectId(campId),
-              clickId: { $in: clicks },
-            },
-            {
-              referPaymentStatus: status,
-              referPayMessage: payMessage,
-            }
-          ),
-        ]);
+      await Promise.all([
+        PendingPayment.updateMany(
+          {
+            userId: new mongoose.Types.ObjectId(userId),
+            status: { $in: ["PENDING", "ACCEPTED"] },
+            type: "refer",
+            paymentStatus: { $nin: ["ACCEPTED"] },
+            campId: new mongoose.Types.ObjectId(campId),
+            clickId: { $in: clicks },
+          },
+          {
+            status: "ACCEPTED",
+            paymentStatus: status,
+            payMessage,
+            message:
+              "We have processed your request; please check payment status",
+            response: payment,
+          }
+        ),
+        Leads.updateMany(
+          {
+            userId: new mongoose.Types.ObjectId(userId),
+            status: "Approved",
+            referPaymentStatus: "PENDING",
+            campId: new mongoose.Types.ObjectId(campId),
+            clickId: { $in: clicks },
+          },
+          {
+            referPaymentStatus: status,
+            referPayMessage: payMessage,
+          }
+        ),
+      ]);
 
-        console.log(
-          `PayentWorker >> Processed task for userId: ${value}, totalAmount: ${totalAmount}`
-        );
-      } catch (err) {
-        console.error("PayentWorker >> Error processing task:", err);
-      }
+      console.log(
+        `PayentWorker >> Processed task for userId: ${value}, totalAmount: ${totalAmount}`
+      );
     });
   } catch (error) {
     console.error(

@@ -1,5 +1,6 @@
-const { startClickWorker, flushClicks, getClickFlushTimer, getClickBuffer } = require("./click.worker");
-const { startLeadWorker, flushLeads, getLeadFlushTimer, getLeadBuffer } = require("./lead.worker");
+const { startClickWorker, stopClickWorker, flushClicks, getClickFlushTimer, getClickBuffer } = require("./click.worker");
+const { startLeadWorker, stopLeadWorker, flushLeads, getLeadFlushTimer, getLeadBuffer } = require("./lead.worker");
+const { startPostbackWorker } = require("./postback.worker");
 
 async function startWorkers() {
   if (process.env.NODE_ENV !== "test") {
@@ -22,15 +23,18 @@ async function startWorkers() {
     } catch (err) {
       console.error("Workers >> Lead worker failed:", err.message);
     }
+
+    try {
+      await startPostbackWorker();
+      console.log("Workers >> Postback worker started");
+    } catch (err) {
+      console.error("Workers >> Postback worker failed:", err.message);
+    }
   }
 }
 
-async function flushAll() {
-  await Promise.all([flushClicks(), flushLeads()]);
+async function stopWorkers() {
+  await Promise.all([stopClickWorker(), stopLeadWorker()]);
 }
 
-function getWorkerTimers() {
-  return [getClickFlushTimer(), getLeadFlushTimer()].filter(Boolean);
-}
-
-module.exports = { startWorkers, flushAll, getWorkerTimers, getClickBuffer, getLeadBuffer };
+module.exports = { startWorkers, stopWorkers, getClickBuffer, getLeadBuffer };

@@ -29,5 +29,6 @@ LeadSchema.index({ campId: 1, user: 1, event: 1 });
 LeadSchema.index({ campId: 1, ip: 1, event: 1 });
 LeadSchema.index({ campId: 1, user: 1, click: 1, event: 1, status: 1 });
 LeadSchema.index({ campId: 1, clickId: 1, event: 1 });
+LeadSchema.index({ clickId: 1, event: 1 });
 
 module.exports = mongoose.model("lead", LeadSchema);
