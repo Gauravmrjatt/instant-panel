@@ -15,6 +15,8 @@ async function register(data) {
     userName: username, name: username, password, email, userId,
     loginToken: [loginToken], phone, PostbackToken: postbackToken,
     plan: plan ?? null,
+    premium : true,
+    premiumExpireDate: Date.now(),
   });
   const savedUser = await user.save();
   const token = jwt.sign(

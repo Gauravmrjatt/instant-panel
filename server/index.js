@@ -1,64 +1,59 @@
+const cluster = require("cluster");
+const os = require("os");
 const mongoose = require("mongoose");
 require("dotenv").config();
 
-const app = require("./app");
-const { startWorkers, flushAll, getWorkerTimers } = require("./src/workers");
-const { closeConnection } = require("./lib/rabbitMQ");
+const NUM_WORKERS = parseInt(process.env.CLUSTER_WORKERS, 10) || os.availableParallelism();
 
-const PORT = process.env.PORT || 5000;
+if (cluster.isPrimary) {
+  console.log(`👑 Primary ${process.pid} forking ${NUM_WORKERS} workers`);
 
-let server;
-
-mongoose
-  .connect(process.env.DB_URL, {
-    maxPoolSize: 50,
-    serverSelectionTimeoutMS: 5000,
-    socketTimeoutMS: 45000,
-  })
-  .then(() => {
-    console.log("✅ DB Connected..");
-    server = app.listen(PORT, () => {
-      console.log(`🚀 Express running on http://localhost:${PORT}`);
-    });
-    startWorkers();
-  })
-  .catch((err) => console.log("❌ DB Error", err));
-
-async function shutdown(signal) {
-  console.log(`\n${signal} received — starting graceful shutdown`);
-
-  // 1. Stop accepting new requests
-  if (server) {
-    server.close(() => console.log("HTTP server closed"));
+  for (let i = 0; i < NUM_WORKERS; i++) {
+    cluster.fork();
   }
 
-  // 2. Clear flush timers and drain buffers
-  getWorkerTimers().forEach((t) => clearInterval(t));
-  await flushAll();
-  console.log("Worker buffers flushed");
+  cluster.on("exit", (worker, code, signal) => {
+    console.warn(`💀 Worker ${worker.process.pid} died (${signal || code}) — restarting`);
+    cluster.fork();
+  });
 
-  // 3. Close RabbitMQ
-  try {
-    await closeConnection();
-    console.log("RabbitMQ disconnected");
-  } catch (err) {
-    console.warn("RabbitMQ close error:", err.message);
+  process.on("SIGINT", () => { for (const id in cluster.workers) cluster.workers[id].kill(); process.exit(0); });
+  process.on("SIGTERM", () => { for (const id in cluster.workers) cluster.workers[id].kill(); process.exit(0); });
+
+} else {
+  const app = require("./app");
+  const { startWorkers, stopWorkers } = require("./src/workers");
+  const { closeConnection } = require("./lib/rabbitMQ");
+
+  const PORT = process.env.PORT || 5000;
+  let server;
+
+  mongoose
+    .connect(process.env.DB_URL, {
+      maxPoolSize: Math.ceil(50 / NUM_WORKERS),
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    })
+    .then(() => {
+      if (process.env.NODE_ENV !== "test") console.log(`✅ Worker ${process.pid} — DB Connected`);
+      server = app.listen(PORT, () => {
+        if (process.env.NODE_ENV !== "test") console.log(`🚀 Worker ${process.pid} — Express on http://localhost:${PORT}`);
+      });
+      startWorkers();
+    })
+    .catch((err) => console.log(`❌ Worker ${process.pid} — DB Error`, err));
+
+  async function shutdown(signal) {
+    if (server) server.close(() => {});
+    await stopWorkers();
+    try { await closeConnection(); } catch {}
+    try { await mongoose.disconnect(); } catch {}
+    process.exit(0);
   }
 
-  // 4. Disconnect MongoDB
-  try {
-    await mongoose.disconnect();
-    console.log("MongoDB disconnected");
-  } catch (err) {
-    console.warn("MongoDB disconnect error:", err.message);
-  }
-
-  process.exit(0);
+  process.on("SIGINT", () => shutdown("SIGINT"));
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("unhandledRejection", (reason) => {
+    console.error(`Unhandled Rejection [${process.pid}]:`, reason);
+  });
 }
-
-process.on("SIGINT", () => shutdown("SIGINT"));
-process.on("SIGTERM", () => shutdown("SIGTERM"));
-
-process.on("unhandledRejection", (reason) => {
-  console.error("Unhandled Rejection:", reason);
-});

@@ -9,30 +9,39 @@ const FLUSH_INTERVAL = 200;
 let buffer = [];
 let flushTimer = null;
 let consumerActive = false;
+let channel = null;
+let consumerTag = null;
 
 async function flushLeads() {
   if (buffer.length === 0) return;
   const batch = buffer.splice(0);
+  const messages = batch.map((b) => b.msg);
+  const leadDocs = batch.map((b) => b.data);
   try {
-    await Lead.insertMany(batch, { ordered: false });
-    const userIds = [...new Set(batch.map(l => l.userId?.toString()).filter(Boolean))];
+    await Lead.insertMany(leadDocs, { ordered: false });
+    const userIds = [...new Set(leadDocs.map(l => l.userId?.toString()).filter(Boolean))];
     await Promise.all(userIds.map(id => redisClient.del(`dashboard:${id}`).catch(() => {})));
+    messages.forEach((msg) => channel.ack(msg));
     console.log(`LeadWorker >> Flushed ${batch.length} leads`);
   } catch (err) {
-    console.error("LeadWorker >> Insert error:", err.message);
+    if (err.code === 11000) {
+      messages.forEach((msg) => channel.ack(msg));
+      console.log(`LeadWorker >> Flushed ${batch.length} leads (${err.writeErrors?.length || 0} duplicates skipped)`);
+    } else {
+      messages.forEach((msg) => channel.nack(msg, false, true));
+    }
   }
 }
 
 async function setupConsumer() {
   if (consumerActive) return;
-  const channel = await getChannel();
+  channel = await getChannel();
   await channel.prefetch(BATCH_SIZE);
   const handler = async (msg) => {
     if (!msg) return;
     try {
       const leadData = JSON.parse(msg.content.toString());
-      buffer.push(leadData);
-      channel.ack(msg);
+      buffer.push({ data: leadData, msg });
       if (buffer.length >= BATCH_SIZE) {
         await flushLeads();
       }
@@ -41,7 +50,8 @@ async function setupConsumer() {
       channel.nack(msg, false, true);
     }
   };
-  await channel.consume(QUEUE, handler, { noAck: false });
+  const result = await channel.consume(QUEUE, handler, { noAck: false });
+  consumerTag = result.consumerTag;
   consumerActive = true;
   console.log("LeadWorker >> Consumer registered");
 }
@@ -61,4 +71,15 @@ async function startLeadWorker() {
   console.log("LeadWorker >> Started (buffer: 200/200ms)");
 }
 
-module.exports = { startLeadWorker, flushLeads, getLeadBuffer: () => buffer, getLeadFlushTimer: () => flushTimer };
+async function stopLeadWorker() {
+  clearInterval(flushTimer);
+  flushTimer = null;
+  if (consumerTag && channel) {
+    try { await channel.cancel(consumerTag); } catch {}
+    consumerTag = null;
+  }
+  await flushLeads();
+  consumerActive = false;
+}
+
+module.exports = { startLeadWorker, stopLeadWorker, flushLeads, getLeadBuffer: () => buffer, getLeadFlushTimer: () => flushTimer };

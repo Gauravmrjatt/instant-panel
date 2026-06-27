@@ -118,6 +118,7 @@ async function assertQueues() {
     ch.assertQueue("payment_processing", { durable: true }),
     ch.assertQueue("dead_letter", { durable: true }),
     ch.assertQueue("lead_write", { durable: true }),
+    ch.assertQueue("postback_processing", { durable: true }),
   ]);
 }
 
@@ -146,13 +147,14 @@ function consumeMessages(queueName, onMessage) {
       "RabbitMQ channel is not initialized. Call connectToRabbitMQ first."
     );
   }
-  const handler = (msg) => {
-    if (msg) {
-      console.log(
-        `Message received from queue "${queueName}": ${msg.content.toString()}`
-      );
-      onMessage(msg.content.toString());
+  const handler = async (msg) => {
+    if (!msg) return;
+    try {
+      await onMessage(msg.content.toString());
       channel.ack(msg);
+    } catch (err) {
+      console.error(`consumeMessages >> Error processing ${queueName}:`, err.message);
+      channel.nack(msg, false, true);
     }
   };
   channel.consume(queueName, handler, { noAck: false });

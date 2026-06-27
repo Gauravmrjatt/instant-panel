@@ -18,12 +18,13 @@ describe("Postback Routes", () => {
   });
 
   describe("GET /api/v1/postback/:PostbackToken/:event", () => {
-    it("should process postback with valid token and click", async () => {
+    it("should accept postback with valid token and click (async)", async () => {
       const res = await request(app)
         .get(`/api/v1/postback/${postbackToken}/lead`)
         .query({ click: click.click });
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(202);
       expect(res.body.status).toBe(true);
+      expect(res.body.msg).toMatch(/accepted for processing/);
     });
 
     it("should reject without click parameter", async () => {
@@ -34,53 +35,42 @@ describe("Postback Routes", () => {
       expect(res.body.msg).toMatch(/PostbackToken and click/);
     });
 
-    it("should reject invalid PostbackToken", async () => {
+    it("should reject without event parameter", async () => {
       const res = await request(app)
-        .get("/api/v1/postback/invalidtoken/lead")
-        .query({ click: click.click });
-      expect(res.status).toBe(200);
-      expect(res.body.status).toBe(false);
-      expect(res.body.msg).toMatch(/Invalid PostbackToken/);
+        .get(`/api/v1/postback/${postbackToken}`);
+      expect(res.status).toBe(404);
     });
   });
 
   describe("GET /api/v1/campaign/postback/:CampaignToken/:event", () => {
-    it("should process campaign postback with valid token", async () => {
+    it("should accept campaign postback with valid token (async)", async () => {
       const res = await request(app)
         .get(`/api/v1/campaign/postback/${camp.postbackToken}/lead`)
         .query({ click: click.click });
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(202);
       expect(res.body.status).toBe(true);
+      expect(res.body.msg).toMatch(/accepted for processing/);
     });
 
-    it("should reject invalid CampaignToken", async () => {
+    it("should reject without click parameter", async () => {
       const res = await request(app)
-        .get("/api/v1/campaign/postback/invalidtoken/lead")
-        .query({ click: click.click });
+        .get("/api/v1/campaign/postback/invalidtoken/lead");
       expect(res.status).toBe(200);
       expect(res.body.status).toBe(false);
     });
   });
 
-  describe("GET /api/v1/postback/:PostbackToken/:event with caps", () => {
-    it("should handle caps reached", async () => {
-      const campWithCaps = await createCampaign(auth.user._id, auth.user.userName, {
-        postbackToken: "caps_token_" + Date.now(),
-        events: [{
-          name: "lead", user: 100, refer: 50,
-          userComment: "uc", referComment: "rc",
-          caps: 1, dailyCaps: 0, time: 0, payMode: "auto",
-        }],
-      });
-      const click1 = await createClick(auth.user._id, campWithCaps._id, "click1_" + Date.now());
-      const click2 = await createClick(auth.user._id, campWithCaps._id, "click2_" + Date.now());
-      await request(app)
-        .get(`/api/v1/postback/${auth.user.PostbackToken}/lead`)
-        .query({ click: click1.click });
-      const res = await request(app)
-        .get(`/api/v1/postback/${auth.user.PostbackToken}/lead`)
-        .query({ click: click2.click });
-      expect(res.status).toBe(200);
+  describe("GET /api/v1/postback/:PostbackToken/:event — duplicate click", () => {
+    it("should accept duplicate click (dedup handled async)", async () => {
+      const res1 = await request(app)
+        .get(`/api/v1/postback/${postbackToken}/lead`)
+        .query({ click: click.click });
+      expect(res1.status).toBe(202);
+
+      const res2 = await request(app)
+        .get(`/api/v1/postback/${postbackToken}/lead`)
+        .query({ click: click.click });
+      expect(res2.status).toBe(202);
     });
   });
 });

@@ -56,7 +56,7 @@ async function processClick(campInfo, aff_click_id, sub_aff_id, userIp, deviceQu
   try {
     sendToQueue("click_buffer", JSON.stringify(clickDoc));
   } catch (err) {
-    console.error("RabbitMQ publish error:", err);
+    console.warn("RabbitMQ unavailable — saving click directly to DB");
     await Click.create(clickDoc);
   }
 

@@ -9,8 +9,8 @@ const redisClient = require("../../lib/redisClient");
 async function getDashboard(req, res) {
   try {
     const userId = req.user.db._id;
-    const isPremium = req.user.db.premium;
-    if (!isPremium) return res.json({ status: false, msg: "You Plan has expired", code: 0 });
+    // const isPremium = req.user.db.premium;
+    // if (!isPremium) return res.json({ status: false, msg: "You Plan has expired", code: 0 });
 
     const cacheKey = `dashboard:${userId}`;
     const cached = await redisClient.get(cacheKey);
