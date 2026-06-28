@@ -8,7 +8,7 @@ services:
     env_file:
       - .env
     environment:
-      - NEXT_PUBLIC_API_URL=https://backend5.logicpay.in
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
     networks:
       - instant-panel
     depends_on:
@@ -23,11 +23,13 @@ services:
     env_file:
       - .env
     environment:
-      - PORT=5000
-      - DB_URL=mongodb://rootUser:Aiujgfiuyugsdt8726@mongo:27017/abc?authSource=admin
-      - REDIS_URL=redis://redis:6379
-      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
-      - CORS_ORIGIN=https://panel5.logicpay.in
+      - PORT=${PORT}
+      - DB_URL=${DB_URL}
+      - REDIS_URL=${REDIS_URL}
+      - RABBITMQ_URL=${RABBITMQ_URL}
+      - CORS_ORIGIN=${CORS_ORIGIN}
+      - METRICS_AUTH_TOKEN=${METRICS_AUTH_TOKEN}
+      - LOKI_URL=${LOKI_URL}
     networks:
       - instant-panel
     depends_on:
@@ -42,8 +44,8 @@ services:
     ports:
       - "27019:27017"
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=rootUser
-      - MONGO_INITDB_ROOT_PASSWORD=Aiujgfiuyugsdt8726
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
     volumes:
       - mongo-data:/data/db
     networks:
@@ -57,10 +59,10 @@ services:
     environment:
       - ME_CONFIG_MONGODB_SERVER=mongo
       - ME_CONFIG_MONGODB_PORT=27017
-      - ME_CONFIG_MONGODB_ADMINUSERNAME=rootUser
-      - ME_CONFIG_MONGODB_ADMINPASSWORD=Aiujgfiuyugsdt8726
-      - ME_CONFIG_BASICAUTH_USERNAME=admin
-      - ME_CONFIG_BASICAUTH_PASSWORD=uygdughfhdfguhdf@37247
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGO_ROOT_USERNAME}
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_ROOT_PASSWORD}
+      - ME_CONFIG_BASICAUTH_USERNAME=${MONGO_EXPRESS_USER}
+      - ME_CONFIG_BASICAUTH_PASSWORD=${MONGO_EXPRESS_PASSWORD}
     networks:
       - instant-panel
     depends_on:
@@ -86,8 +88,8 @@ services:
       - "15693:15692"
       - "5553:5552"
     environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS}
     command:
       - sh
       - -ec
@@ -126,7 +128,7 @@ services:
     ports:
       - "9217:9216"
     environment:
-      - MONGODB_URI=mongodb://rootUser:Aiujgfiuyugsdt8726@mongo:27017/abc?authSource=admin
+      - MONGODB_URI=${DB_URL}
     networks:
       - instant-panel
     depends_on:
@@ -138,7 +140,7 @@ services:
     ports:
       - "9122:9121"
     environment:
-      - REDIS_ADDR=redis://redis:6379
+      - REDIS_ADDR=${REDIS_URL}
     networks:
       - instant-panel
     depends_on:
@@ -174,8 +176,8 @@ services:
     ports:
       - "3002:3000"
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
       - GF_INSTALL_PLUGINS=
       - GF_ENABLE_PROMETHEUS_METRICS=true
     volumes:

@@ -1,5 +1,5 @@
 # ===== Build Stage =====
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 RUN corepack enable
 WORKDIR /app
@@ -22,7 +22,7 @@ RUN pnpm build
 
 
 # ===== Production Stage =====
-FROM node:20-alpine
+FROM node:22-alpine
 
 RUN corepack enable
 WORKDIR /app
