@@ -18,7 +18,7 @@ async function flushClicks() {
   const messages = batch.map((b) => b.msg);
   const clickDocs = batch.map((b) => b.data);
   try {
-    await Click.insertMany(clickDocs, { ordered: false });
+    await Click.insertMany(clickDocs, { ordered: false, w: 1, j: false });
     messages.forEach((msg) => channel.ack(msg));
     logger.info({ count: batch.length }, "ClickWorker >> Flushed clicks");
   } catch (err) {
