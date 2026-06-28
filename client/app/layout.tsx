@@ -28,11 +28,7 @@ export default function RootLayout({
       className={cn("antialiased", fontMono.variable, "font-sans", dmSans.variable, geist.className)}
     >
       <head>
-          <Script
-          src="//unpkg.com/react-scan/dist/auto.global.js"
-          crossOrigin="anonymous"
-          strategy="beforeInteractive"
-        />
+          
         <meta name="description" content="Instant Panel" />
         <title>Instant Panel</title>
         <link rel="icon" href="/favicon.ico" />

@@ -59,6 +59,7 @@ import { DashboardTeamSwitcher } from "@/components/dashboard/team-switcher";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUserProfile } from "@/hooks/useUser";
+import { useAuth } from "@/context/AuthContext";
 import { ListPlus, TableOfContents } from "lucide-react";
 
 interface SubItem {
@@ -363,6 +364,7 @@ export function DashboardSidebar({
   const activeItemData = sidebarItems.find((item) => item.id === activeSection);
 
   const { data: user } = useUserProfile();
+  const { logout } = useAuth();
 
   const handleItemClick = (item: SidebarItem) => {
     if (item.hasSubItems && showSubNav) {
@@ -476,14 +478,14 @@ export function DashboardSidebar({
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem variant="destructive">
-                    <Link
-                      href="/auth/login"
-                      className="flex items-center gap-2.5 w-full text-destructive"
-                    >
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onSelect={() => logout()}
+                  >
+                    <span className="flex items-center gap-2.5 w-full text-destructive">
                       <IconLogout className="h-4 w-4" />
                       Log out
-                    </Link>
+                    </span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -569,7 +571,7 @@ export function DashboardSidebar({
                     )}
                     <div className="flex-1 text-left min-w-0">
                       <div className="text-sm font-medium truncate">
-                        {user?.name.trim().slice(0, 15) || <Skeleton className="h-4 w-20" />}
+                        {user?.name?.trim().slice(0, 15) || <Skeleton className="h-4 w-20" />}
                       </div>
                       <div className="text-xs text-muted-foreground truncate">
                         {user?.email?.trim() || <Skeleton className="h-3 w-28" />}
@@ -595,7 +597,7 @@ export function DashboardSidebar({
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
                       <span className="truncate font-medium">
-                        {user?.name.trim() || "User"}
+                        {user?.name?.trim() || "User"}
                       </span>
                       <span className="truncate text-xs text-muted-foreground">
                         {user?.email || "user@example.com"}
@@ -623,14 +625,14 @@ export function DashboardSidebar({
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive">
-                  <Link
-                    href="/auth/login"
-                    className="flex items-center gap-2.5 w-full text-destructive"
-                  >
+                <DropdownMenuItem
+                  variant="destructive"
+                  onSelect={() => logout()}
+                >
+                  <span className="flex items-center gap-2.5 w-full text-destructive">
                     <IconLogout className="h-4 w-4" />
                     Log out
-                  </Link>
+                  </span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

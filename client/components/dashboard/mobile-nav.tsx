@@ -3,6 +3,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useUserProfile } from "@/hooks/useUser";
+import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import { siteConfig } from "@/lib/config";
 import Link from "next/link";
@@ -290,6 +291,7 @@ export function MobileNav({
   }, [router]);
 
   const { data: user } = useUserProfile();
+  const { logout } = useAuth();
 
   const handleMainItemClick = (item: SidebarItem) => {
     if (item.hasSubItems) {
@@ -412,12 +414,10 @@ export function MobileNav({
             </div>
           </div>
         </div>
-        <Link href="/auth/login">
-          <Button variant="outline" className="w-full">
-            <IconLogout className="h-4 w-4 mr-2" />
-            Logout
-          </Button>
-        </Link>
+        <Button variant="outline" className="w-full" onClick={() => logout()}>
+          <IconLogout className="h-4 w-4 mr-2" />
+          Logout
+        </Button>
       </div>
     </div>
   );

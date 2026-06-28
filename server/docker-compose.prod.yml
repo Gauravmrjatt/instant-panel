@@ -30,6 +30,7 @@ services:
       - CORS_ORIGIN=${CORS_ORIGIN}
       - METRICS_AUTH_TOKEN=${METRICS_AUTH_TOKEN}
       - LOKI_URL=${LOKI_URL}
+    command: ["node", "index.js"]
     networks:
       - instant-panel
     depends_on:
@@ -182,8 +183,7 @@ services:
       - GF_ENABLE_PROMETHEUS_METRICS=true
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
-      - ./grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml
+      - ./grafana/provisioning:/etc/grafana/provisioning
       - ./grafana/dashboards:/var/lib/grafana/dashboards
     networks:
       - instant-panel
