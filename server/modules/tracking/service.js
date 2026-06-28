@@ -2,25 +2,11 @@ const Campaign = require("../campaigns/model");
 const Click = require("../clicks/model");
 const { v4: uuidv4 } = require("uuid");
 const requestIp = require("request-ip");
-const DeviceDetector = require("node-device-detector");
 const redisClient = require("../../lib/redisClient");
-const { sendToQueue } = require("../../lib/rabbitMQ");
 const { LRUCache } = require("lru-cache");
 const logger = require("../../lib/logger");
 
-const detector = new DeviceDetector({ clientIndexes: true, deviceIndexes: true, deviceAliasCode: false });
 const generateUUID = () => uuidv4().replace(/-/g, "");
-
-const deviceCache = new LRUCache({ max: 5000 });
-
-function detectDevice(ua) {
-  if (!ua) return { status: false, msg: "No device info provided" };
-  const cached = deviceCache.get(ua);
-  if (cached) return cached;
-  const result = detector.detect(ua);
-  deviceCache.set(ua, result);
-  return result;
-}
 
 const campaignCache = new LRUCache({ max: 500, ttl: 60_000 });
 
@@ -52,22 +38,49 @@ async function getCampaign(campId) {
   return campInfo;
 }
 
+// ── In-process batch click buffer ──────────────────────────
+const clickBuffer = [];
+const BATCH_MAX = 500;
+const BATCH_INTERVAL = 200;
+let flushTimer = null;
+
+function flushClicks() {
+  const batch = clickBuffer.splice(0);
+  if (batch.length === 0) return;
+  Click.insertMany(batch, { ordered: false }).catch((err) => {
+    logger.error({ err, count: batch.length }, "Failed to flush click batch — falling back to individual inserts");
+    batch.forEach((doc) => Click.create(doc).catch((e) => logger.error({ err: e, click: doc.click }, "Failed to save click")));
+  });
+}
+
+function bufferClick(clickDoc) {
+  clickBuffer.push(clickDoc);
+  if (clickBuffer.length >= BATCH_MAX) {
+    if (flushTimer) clearTimeout(flushTimer);
+    flushTimer = null;
+    flushClicks();
+  } else if (!flushTimer) {
+    flushTimer = setTimeout(() => {
+      flushTimer = null;
+      flushClicks();
+    }, BATCH_INTERVAL);
+  }
+}
+
+// Flush remaining on shutdown
+process.on("beforeExit", () => { if (flushTimer) clearTimeout(flushTimer); flushClicks(); });
+// ──────────────────────────────────────────────────────────
+
 async function processClick(campInfo, aff_click_id, sub_aff_id, userIp, deviceQuery, req) {
   const click = generateUUID();
   const ip = userIp || requestIp.getClientIp(req);
-  const device = detectDevice(deviceQuery);
 
   const clickDoc = {
     userId: campInfo.userId, campId: campInfo._id, click, user: aff_click_id.trim().toLowerCase(),
-    refer: sub_aff_id.trim().toLowerCase(), ip, device, number: req.query.number, params: req.query,
+    refer: sub_aff_id.trim().toLowerCase(), ip, device: {}, number: req.query.number, params: req.query,
   };
 
-  try {
-    sendToQueue("click_buffer", JSON.stringify(clickDoc));
-  } catch (err) {
-    logger.warn("RabbitMQ unavailable — saving click directly to DB");
-    await Click.create(clickDoc);
-  }
+  bufferClick(clickDoc);
 
   return click;
 }
