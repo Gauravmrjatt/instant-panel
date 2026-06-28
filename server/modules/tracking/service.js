@@ -1,10 +1,10 @@
 const Campaign = require("../campaigns/model");
-const Click = require("../clicks/model");
 const { v4: uuidv4 } = require("uuid");
 const requestIp = require("request-ip");
 const redisClient = require("../../lib/redisClient");
 const { LRUCache } = require("lru-cache");
 const logger = require("../../lib/logger");
+const mongoose = require("mongoose");
 
 const generateUUID = () => uuidv4().replace(/-/g, "");
 
@@ -47,10 +47,8 @@ let flushTimer = null;
 function flushClicks() {
   const batch = clickBuffer.splice(0);
   if (batch.length === 0) return;
-  Click.insertMany(batch, { ordered: false, w: 1, j: false }).catch((err) => {
-    logger.error({ err, count: batch.length }, "Failed to flush click batch — falling back to individual inserts");
-    batch.forEach((doc) => Click.create(doc).catch((e) => logger.error({ err: e, click: doc.click }, "Failed to save click")));
-  });
+  mongoose.connection.db.collection("clicks").insertMany(batch, { ordered: false, w: 1, j: false })
+    .catch((err) => logger.error({ err, count: batch.length }, "Failed to flush click batch"));
 }
 
 function bufferClick(clickDoc) {

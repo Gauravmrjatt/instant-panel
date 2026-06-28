@@ -1,6 +1,6 @@
 const { connectToRabbitMQ, createQueue, getChannel, channelEmitter } = require("../../lib/rabbitMQ");
-const Click = require("../../modules/clicks/model");
 const logger = require("../../lib/logger");
+const mongoose = require("mongoose");
 
 const QUEUE = "click_buffer";
 const BATCH_SIZE = 1000;
@@ -18,7 +18,7 @@ async function flushClicks() {
   const messages = batch.map((b) => b.msg);
   const clickDocs = batch.map((b) => b.data);
   try {
-    await Click.insertMany(clickDocs, { ordered: false, w: 1, j: false });
+    await mongoose.connection.db.collection("clicks").insertMany(clickDocs, { ordered: false, w: 1, j: false });
     messages.forEach((msg) => channel.ack(msg));
     logger.info({ count: batch.length }, "ClickWorker >> Flushed clicks");
   } catch (err) {
