@@ -18,7 +18,7 @@ async function flushClicks() {
   const messages = batch.map((b) => b.msg);
   const clickDocs = batch.map((b) => b.data);
   try {
-    await mongoose.connection.db.collection("clicks").insertMany(clickDocs, { ordered: false, w: 1, j: false });
+    await mongoose.connection.getClient().db().collection("clicks").insertMany(clickDocs, { ordered: false, w: 1, j: false });
     messages.forEach((msg) => channel.ack(msg));
     logger.info({ count: batch.length }, "ClickWorker >> Flushed clicks");
   } catch (err) {

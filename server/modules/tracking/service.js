@@ -47,7 +47,7 @@ let flushTimer = null;
 function flushClicks() {
   const batch = clickBuffer.splice(0);
   if (batch.length === 0) return;
-  mongoose.connection.db.collection("clicks").insertMany(batch, { ordered: false, w: 1, j: false })
+  mongoose.connection.getClient().db().collection("clicks").insertMany(batch, { ordered: false, w: 1, j: false })
     .catch((err) => logger.error({ err, count: batch.length }, "Failed to flush click batch"));
 }
 
