@@ -11,6 +11,16 @@ const nextConfig = {
   },
   headers: async () => [
     {
+      source: "/_next/static/:path*",
+      locale: false,
+      headers: [
+        {
+          key: "Cache-Control",
+          value: "public, max-age=31536000, immutable",
+        },
+      ],
+    },
+    {
       source: "/:all*(svg|jpg|jpeg|png|webp|avif|ico)",
       locale: false,
       headers: [
@@ -31,12 +41,12 @@ const nextConfig = {
       ],
     },
     {
-      source: "/_next/static/:path*",
+      source: "/:path*",
       locale: false,
       headers: [
         {
           key: "Cache-Control",
-          value: "public, max-age=31536000, immutable",
+          value: "no-cache, no-store, must-revalidate",
         },
       ],
     },
