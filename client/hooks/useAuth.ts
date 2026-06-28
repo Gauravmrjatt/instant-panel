@@ -13,17 +13,15 @@ interface LoginCredentials {
 }
 
 async function login(credentials: LoginCredentials): Promise<LoginResponse> {
-  const res = await fetch(`${apiConfig.baseUrl}/auth/login`, {
+  const res = await fetch(`${apiConfig.baseUrl}/api/v1/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify(credentials),
   });
   const data = await res.json();
   if (!res.ok || data.status === false) {
     throw new Error(data.msg || "Login failed");
-  }
-  if (data.token) {
-    localStorage.setItem("token", data.token);
   }
   return data;
 }
@@ -51,9 +49,10 @@ interface RegisterCredentials {
 async function register(
   credentials: RegisterCredentials,
 ): Promise<RegisterResponse> {
-  const res = await fetch(`${apiConfig.baseUrl}/auth/register`, {
+  const res = await fetch(`${apiConfig.baseUrl}/api/v1/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify(credentials),
   });
   if (!res.ok) {
@@ -61,9 +60,6 @@ async function register(
     throw new Error(error.msg || "Registration failed");
   }
   const data = await res.json();
-  if (data.token) {
-    localStorage.setItem("token", data.token);
-  }
   return data;
 }
 
@@ -79,7 +75,7 @@ interface ForgetResponse {
 }
 
 async function forgetPassword(email: string): Promise<ForgetResponse> {
-  const res = await fetch(`${apiConfig.baseUrl}/auth/forget`, {
+  const res = await fetch(`${apiConfig.baseUrl}/api/v1/auth/forgot-password`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },

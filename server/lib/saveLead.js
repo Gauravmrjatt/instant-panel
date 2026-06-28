@@ -1,4 +1,4 @@
-const Lead = require("../models/Leads");
+const Lead = require("../modules/leads/model");
 
 const saveLeadd = async (lead) => {
   const saveLead = new Lead(lead);

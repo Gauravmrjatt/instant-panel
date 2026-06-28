@@ -41,7 +41,7 @@ export function useLeads(campaignId: string, page: number = 1, limit: number = 2
     queryKey: ['leads', campaignId, page, limit],
     queryFn: async () => {
       const res = await authFetch(
-        `${apiConfig.baseUrl}/get/leads/${campaignId}?page=${page}&limit=${limit}`
+        `${apiConfig.baseUrl}/api/v1/campaigns/${campaignId}/leads?page=${page}&limit=${limit}`
       )
       const json: LeadsResponse = await res.json()
       if (!json.status) {

@@ -126,7 +126,7 @@ export default function ClickDetailsContent({ clickId, event }: { clickId: strin
   const { data, isLoading, isError } = useQuery<ClickDetails>({
     queryKey: ['click-details', clickId, event],
     queryFn: async () => {
-      const res = await authFetch(`${apiConfig.baseUrl}/get/click/${clickId}/?event=${event}`)
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/clicks/${clickId}?event=${event}`)
       return res.json()
     },
     enabled: !!clickId && !!event,
@@ -134,8 +134,8 @@ export default function ClickDetailsContent({ clickId, event }: { clickId: strin
 
   const updateLeadMutation = useMutation({
     mutationFn: async (status: string) => {
-      const res = await authFetch(`${apiConfig.baseUrl}/update/leadStatus`, {
-        method: 'POST',
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/leads/${clickId}/status`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ leadStatus: status, ID: clickId }),
       })
@@ -156,10 +156,9 @@ export default function ClickDetailsContent({ clickId, event }: { clickId: strin
 
   const payNowMutation = useMutation({
     mutationFn: async () => {
-      const res = await authFetch(`${apiConfig.baseUrl}/update/payment`, {
-        method: 'POST',
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/leads/${clickId}/process-payment`, {
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ getEvent: event, ID: clickId }),
+        body: JSON.stringify({ getEvent: event }),
       })
       return res.json()
     },

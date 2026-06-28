@@ -36,7 +36,7 @@ export default function PayToUserPage() {
 
   const payMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      const res = await authFetch(`${apiConfig.baseUrl}/pay/user`, {
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/payments/manual`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pay: data })

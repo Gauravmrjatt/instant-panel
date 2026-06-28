@@ -49,7 +49,7 @@ export function PaymentsChart({
       stroke: { curve: 'smooth', width: 3 },
       dataLabels: { enabled: false },
       xaxis: {
-        categories: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Yesterday', 'Today'],
+        categories: ['6 days ago', '5 days ago', '4 days ago', '3 days ago', '2 days ago', 'Yesterday', 'Today'],
         labels: {
           show: true,
           style: {
@@ -104,7 +104,7 @@ export function PaymentsChart({
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="h-full">
         <CardHeader>
           <Skeleton className="h-5 w-32" />
           <Skeleton className="h-4 w-24" />
@@ -117,14 +117,14 @@ export function PaymentsChart({
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-2">
+    <Card className="h-full flex flex-col">
+      <CardHeader className="pb-2 shrink-0">
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-lg">Payment Trends</CardTitle>
             <CardDescription>7 days revenue</CardDescription>
           </div>
-          <div className="text-right">
+          <div className="text-right shrink-0">
             <div className="text-2xl font-bold">
               {new Intl.NumberFormat('en-IN', {
                 style: 'currency',
@@ -139,7 +139,7 @@ export function PaymentsChart({
       <CardContent className="space-y-4">
         <ApexChart type="area" options={chartOptions} series={series} height={200} />
 
-        <div className="grid grid-cols-3 gap-4 pt-4 border-t">
+        <div className="grid grid-cols-3 gap-4 pt-4 border-t shrink-0">
           <div className="text-center">
             <p className="text-xs text-muted-foreground">Today</p>
             <p className="font-semibold tabular-nums">

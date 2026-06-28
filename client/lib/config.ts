@@ -10,13 +10,11 @@ export const apiConfig = {
 };
 
 export async function authFetch(url: string, options?: RequestInit) {
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
   return fetch(url, {
     ...options,
+    credentials: "include",
     headers: {
       ...options?.headers,
-      ...(token && { Authorization: `Bearer ${token}` }),
     },
   });
 }

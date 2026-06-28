@@ -1,14 +1,13 @@
 const pino = require("pino");
-const pinoLoki = require("pino-loki");
 
-const transport = pinoLoki({
-  host: process.env.LOKI_URL, // Loki endpoint
-  basicAuth: null, // Add basic auth if needed
-  labels: { app: "instant-panel" }, // Labels for logs
-  json: true,
-  interval: 5, // Batch interval in seconds
+const isDev = process.env.NODE_ENV !== "production";
+const level = process.env.LOG_LEVEL || (isDev ? "debug" : "info");
+
+const logger = pino({
+  level,
+  ...(isDev && process.env.LOG_FORMAT !== "json" && {
+    transport: { target: "pino-pretty", options: { colorize: true, translateTime: "HH:MM:ss" } },
+  }),
 });
-
-const logger = pino(transport);
 
 module.exports = logger;

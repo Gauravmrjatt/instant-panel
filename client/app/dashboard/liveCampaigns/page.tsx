@@ -24,9 +24,14 @@ import { useCampaigns, type Campaign } from "@/hooks/useCampaigns";
 import { authFetch } from "@/lib/config";
 import { apiConfig } from "@/lib/config";
 
+import dynamic from "next/dynamic";
 import { CampaignStats } from "@/components/campaigns/campaign-stats";
-import { CampaignDrawer } from "@/components/campaigns/campaign-drawer";
 import { CampaignsTable } from "@/components/campaigns/campaigns-table";
+
+const CampaignDrawer = dynamic(
+  () => import("@/components/campaigns/campaign-drawer").then((m) => ({ default: m.CampaignDrawer })),
+  { ssr: false },
+);
 
 type ViewMode = "table" | "grid";
 type FilterTab = "all" | "active" | "pending";
@@ -48,11 +53,9 @@ export default function LiveCampaignsPage() {
   const deleteCampaign = async (id: string) => {
     try {
       const res = await authFetch(
-        `${apiConfig.baseUrl}/delete/campaign`,
+        `${apiConfig.baseUrl}/api/v1/campaigns/${id}`,
         {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ _id: id }),
+          method: "DELETE",
         },
       );
       const result = await res.json();
@@ -116,6 +119,7 @@ export default function LiveCampaignsPage() {
             onClick={() => refetch()}
             disabled={isRefetching}
             className="relative"
+            aria-label="Refresh campaigns"
           >
             <RefreshCw
               className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`}
@@ -218,6 +222,7 @@ export default function LiveCampaignsPage() {
               placeholder="Search campaigns..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label="Search campaigns"
             />
           </div>
           <div className="flex border rounded-md">
@@ -226,6 +231,7 @@ export default function LiveCampaignsPage() {
               size="icon"
               className="rounded-r-none"
               onClick={() => setViewMode("table")}
+              aria-label="Table view"
             >
               <List className="h-4 w-4" />
             </Button>
@@ -234,6 +240,7 @@ export default function LiveCampaignsPage() {
               size="icon"
               className="rounded-l-none"
               onClick={() => setViewMode("grid")}
+              aria-label="Grid view"
             >
               <LayoutGrid className="h-4 w-4" />
             </Button>

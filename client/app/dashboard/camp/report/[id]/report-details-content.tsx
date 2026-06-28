@@ -59,7 +59,7 @@ export default function ReportDetailsContent({ campaignId }: { campaignId: strin
   const { data: campaign, isLoading: isLoadingCampaign } = useQuery({
     queryKey: ['campaign', campaignId],
     queryFn: async () => {
-      const res = await authFetch(`${apiConfig.baseUrl}/get/campaign/${campaignId}`)
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/campaigns/${campaignId}`)
       return res.json()
     },
     enabled: !!campaignId && campaignId.length > 0
@@ -68,7 +68,7 @@ export default function ReportDetailsContent({ campaignId }: { campaignId: strin
   const { data: report } = useQuery({
     queryKey: ['campaign-report', campaignId],
     queryFn: async () => {
-      const res = await authFetch(`${apiConfig.baseUrl}/get/new/reports/${campaignId}`)
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/campaigns/${campaignId}/report`)
       return res.json()
     },
     enabled: !!campaignId && campaignId.length > 0
@@ -87,7 +87,7 @@ export default function ReportDetailsContent({ campaignId }: { campaignId: strin
   }
 
   const trackingUrl = domain
-    ? `${domain}/api/v1/click/${campaignId}?aff_click_id={user_number}&sub_aff_id={refer_number}&userIp={ip}&device={user_agent}&number={number}`
+    ? `${domain}/api/v1/tracking/${campaignId}?aff_click_id={user_number}&sub_aff_id={refer_number}&userIp={ip}&device={user_agent}&number={number}`
     : ''
 
   if (isLoadingCampaign) {

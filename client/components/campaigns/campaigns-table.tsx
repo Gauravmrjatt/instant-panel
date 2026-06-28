@@ -144,6 +144,7 @@ export function CampaignsTable({ data, isLoading, onView, onDelete, searchQuery 
                 e.stopPropagation()
                 handleCopy(String(row.original.offerID), row.original._id || '')
               }}
+              aria-label="Copy offer ID"
             >
               {copiedId === row.original._id ? (
                 <Check className="h-3 w-3 text-emerald-500" />
@@ -239,6 +240,7 @@ export function CampaignsTable({ data, isLoading, onView, onDelete, searchQuery 
               size="icon"
               className="h-5 w-5"
               render={<a href={tracking} target="_blank" rel="noopener noreferrer" />}
+              aria-label="Open tracking link"
             >
               <ExternalLink className="h-3 w-3" />
             </Button>
@@ -284,6 +286,33 @@ export function CampaignsTable({ data, isLoading, onView, onDelete, searchQuery 
                 </Button>
               }
             />
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem
+                render={
+                  <Link href={`/dashboard/camp/view/${campaign._id}`} className="flex items-center gap-2">
+                    <Eye className="h-4 w-4" />
+                    View Campaign
+                  </Link>
+                }
+              />
+              <DropdownMenuItem
+                render={
+                  <Link href={`/dashboard/camp/edit/${campaign._id}`} className="flex items-center gap-2">
+                    <Pencil className="h-4 w-4" />
+                    Edit Campaign
+                  </Link>
+                }
+              />
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={() => onDelete(campaign._id)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Campaign
+              </DropdownMenuItem>
+            </DropdownMenuContent>
           </DropdownMenu>
         )
       },

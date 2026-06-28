@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiConfig, authFetch } from "@/lib/config";
-import { toast, Toaster } from "react-hot-toast";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   Copy,
@@ -41,7 +41,7 @@ export default function GetCustomPage() {
   const { data: postback } = useQuery({
     queryKey: ["postback"],
     queryFn: async () => {
-      const res = await authFetch(`${apiConfig.baseUrl}/get/postback`);
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/postback/config`);
       return res.json();
     },
   });
@@ -53,14 +53,14 @@ export default function GetCustomPage() {
   } = useQuery({
     queryKey: ["api-custom"],
     queryFn: async () => {
-      const res = await authFetch(`${apiConfig.baseUrl}/api/get-custom`);
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/external/custom-amount/${apiKey}`);
       return res.json();
     },
   });
 
   const apiKey = postback?.key || "";
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-  const endpointUrl = `${baseUrl}/api/v1/getCustom/${apiKey}/{number}`;
+  const endpointUrl = `${baseUrl}/api/v1/external/custom-amount/${apiKey}/{number}`;
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);

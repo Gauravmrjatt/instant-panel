@@ -12,7 +12,7 @@ export interface Report {
 }
 
 export async function getReports(): Promise<{ data: Report[] }> {
-  const res = await authFetch(`${apiConfig.baseUrl}/get/reports`)
+  const res = await authFetch(`${apiConfig.baseUrl}/api/v1/reports`)
   if (!res.ok) throw new Error('Failed to fetch reports')
   return res.json()
 }

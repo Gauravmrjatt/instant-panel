@@ -15,10 +15,16 @@ export interface UserProfile {
   premiumExpireDate: string
 }
 
+interface UserProfileResponse {
+  status: boolean;
+  data: UserProfile;
+}
+
 export async function getUserProfile(): Promise<UserProfile> {
-  const res = await authFetch(`${apiConfig.baseUrl}/get/user`)
+  const res = await authFetch(`${apiConfig.baseUrl}/api/v1/users/me`)
   if (!res.ok) throw new Error('Failed to fetch profile')
-  return res.json()
+  const json: UserProfileResponse = await res.json()
+  return json.data || (json as unknown as UserProfile)
 }
 
 export function useUserProfile() {
@@ -29,7 +35,7 @@ export function useUserProfile() {
 }
 
 export async function updateProfile(formData: FormData): Promise<{ status: boolean; profileImg?: string }> {
-  const res = await authFetch(`${apiConfig.baseUrl}/upload/user-profile`, {
+  const res = await authFetch(`${apiConfig.baseUrl}/api/v1/users/me/avatar`, {
     method: 'POST',
     body: formData,
   })

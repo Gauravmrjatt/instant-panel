@@ -32,8 +32,8 @@ export function CampaignsChart({ camps, totalCamps, isLoading }: CampaignsChartP
   const chartOptions: ApexOptions = useMemo(
     () => ({
       chart: {
-        height: 200,
-        width: 200,
+        height: 300,
+        width: '100%',
         type: 'donut',
         fontFamily: 'inherit',
         background: 'transparent',
@@ -80,7 +80,7 @@ export function CampaignsChart({ camps, totalCamps, isLoading }: CampaignsChartP
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="h-full">
         <CardHeader>
           <Skeleton className="h-5 w-32" />
           <Skeleton className="h-4 w-24" />
@@ -93,14 +93,14 @@ export function CampaignsChart({ camps, totalCamps, isLoading }: CampaignsChartP
   }
 
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg">Top Campaigns</CardTitle>
         <CardDescription>{totalCamps} active campaigns</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+        <CardContent className="flex flex-col gap-4">
         <div className="flex justify-center">
-          <ApexChart type="donut" options={chartOptions} series={series} height={200} />
+          <ApexChart type="donut" options={chartOptions} series={series} height={300} />
         </div>
         <div className="space-y-3">
           {camps.slice(0, 5).map((camp, index) => (

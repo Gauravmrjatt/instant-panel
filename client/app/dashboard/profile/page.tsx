@@ -60,14 +60,14 @@ export default function ProfilePage() {
   const { data, isLoading } = useQuery<UserProfile>({
     queryKey: ['user-profile'],
     queryFn: async () => {
-      const res = await authFetch(`${apiConfig.baseUrl}/get/user`)
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/users/me`)
       return res.json()
     },
   })
 
   const uploadMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const res = await fetch(`${apiConfig.baseUrl}/upload/user-profile`, {
+      const res = await fetch(`${apiConfig.baseUrl}/api/v1/users/me/avatar`, {
         method: 'POST',
         body: formData,
         credentials: 'include',
@@ -125,7 +125,7 @@ export default function ProfilePage() {
     <div className="space-y-6 ">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" render={<Link href="/dashboard" />}>
+        <Button variant="outline" size="icon" render={<Link href="/dashboard" />} aria-label="Back to dashboard">
           <User className="h-4 w-4" />
         </Button>
         <div>
@@ -251,7 +251,7 @@ export default function ProfilePage() {
                   <Label className="text-muted-foreground">User ID</Label>
                   <div className="flex gap-2">
                     <Input value={user?.userId || ''} disabled className="bg-muted/50 font-mono text-sm" />
-                    <Button variant="outline" size="icon" onClick={() => copyToClipboard(user?.userId || '')}>
+                    <Button variant="outline" size="icon" onClick={() => copyToClipboard(user?.userId || '')} aria-label="Copy user ID">
                       <Copy className="h-4 w-4" />
                     </Button>
                   </div>
@@ -264,7 +264,7 @@ export default function ProfilePage() {
                   </Label>
                   <div className="flex gap-2">
                     <Input value={user?.PostbackToken || ''} disabled className="bg-muted/50 font-mono text-sm" />
-                    <Button variant="outline" size="icon" onClick={() => copyToClipboard(user?.PostbackToken || '')}>
+                    <Button variant="outline" size="icon" onClick={() => copyToClipboard(user?.PostbackToken || '')} aria-label="Copy postback token">
                       <Copy className="h-4 w-4" />
                     </Button>
                   </div>

@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiConfig, authFetch } from "@/lib/config";
-import { toast, Toaster } from "react-hot-toast";
+import { toast } from "sonner";
 import {
   ArrowLeft,
   Copy,
@@ -42,14 +42,14 @@ export default function UserCheckPage() {
   const { data: postback } = useQuery({
     queryKey: ["postback"],
     queryFn: async () => {
-      const res = await authFetch(`${apiConfig.baseUrl}/get/postback`);
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/postback/config`);
       return res.json();
     },
   });
 
   const apiKey = postback?.key || "";
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-  const endpointUrl = `${baseUrl}/api/v1/checkUser/${apiKey}/{userid}`;
+  const endpointUrl = `${baseUrl}/api/v1/external/user-leads/${apiKey}/{userid}`;
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -63,11 +63,7 @@ export default function UserCheckPage() {
     }
     setIsLoading(true);
     try {
-      const res = await authFetch(`${apiConfig.baseUrl}/api/user`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-      });
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/external/user-leads/${apiKey}/${userId}`);
       const data = await res.json();
       setResult(data);
     } catch (error) {

@@ -54,14 +54,14 @@ export default function BanUpiPage() {
   const { data: bannedUpi, isLoading } = useQuery({
     queryKey: ["banned-number"],
     queryFn: async () => {
-      const res = await authFetch(`${apiConfig.baseUrl}/get/number`);
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/bans`);
       return res.json();
     },
   });
 
   const banMutation = useMutation({
     mutationFn: async (number: string) => {
-      const res = await authFetch(`${apiConfig.baseUrl}/ban/number`, {
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/bans`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ number }),
@@ -84,10 +84,8 @@ export default function BanUpiPage() {
 
   const unbanMutation = useMutation({
     mutationFn: async (number: string) => {
-      const res = await authFetch(`${apiConfig.baseUrl}/ban/unban`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ _id: number }),
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/bans/${number}`, {
+        method: "DELETE",
       });
       return res.json();
     },

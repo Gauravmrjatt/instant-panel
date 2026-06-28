@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { siteConfig } from "@/lib/config";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import {
   IconHome,
   IconFolders,
@@ -276,6 +277,18 @@ export function MobileNav({
   onClose,
 }: MobileNavProps) {
   const router = useRouter();
+
+  useEffect(() => {
+    const routes = sidebarItems.flatMap(item =>
+      item.hasSubItems && item.subItems
+        ? item.subItems.map(sub => sub.route)
+        : item.route
+          ? [item.route]
+          : [],
+    );
+    routes.forEach(route => router.prefetch(route));
+  }, [router]);
+
   const { data: user } = useUserProfile();
 
   const handleMainItemClick = (item: SidebarItem) => {
@@ -382,8 +395,8 @@ export function MobileNav({
         <div className="flex items-center gap-3 mb-3">
           {user?.profileImg ? (
             <Avatar className="h-10 w-10 rounded-full">
-              <AvatarImage src={user.profileImg} alt={user.name} />
-              <AvatarFallback>{user.name?.charAt(0) || "U"}</AvatarFallback>
+              <AvatarImage src={user?.profileImg} alt={user?.name} />
+              <AvatarFallback>{user?.name?.charAt(0) || "U"}</AvatarFallback>
             </Avatar>
           ) : (
             <Avatar className="h-10 w-10 rounded-full">

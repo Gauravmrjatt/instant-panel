@@ -10,7 +10,7 @@ export default function BillingPage() {
   const { data: billing, isLoading } = useQuery({
     queryKey: ['billing'],
     queryFn: async () => {
-      const res = await authFetch(`${apiConfig.baseUrl}/get/billing`)
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/billing`)
       return res.json()
     }
   })
@@ -48,8 +48,8 @@ export default function BillingPage() {
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Status:</span>
-              <span className={b.status === 'active' ? 'text-green-600' : 'text-red-600'}>
-                {b.status || 'Inactive'}
+              <span className={`flex items-center gap-1.5 ${b.status === 'active' ? 'text-green-600' : 'text-red-600'}`}>
+                {b.status === 'active' ? 'Active' : 'Inactive'}
               </span>
             </div>
             <div className="flex justify-between">

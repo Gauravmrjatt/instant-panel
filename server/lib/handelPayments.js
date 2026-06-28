@@ -1,5 +1,6 @@
-const GetwaySettings = require("../models/GatewaySettings");
+const GetwaySettings = require("../modules/gateway-settings/model");
 const axios = require('axios');
+const logger = require("./logger");
 function generateRandomOrderId(length) {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     const orderIdLength = length || 10; // Default length is 10
@@ -62,7 +63,7 @@ const handelPayment = async (userId, number, amount, comment) => {
         }
 
     } catch (error) {
-        console.log("Error:", error);
+        logger.error({ err: error }, "Payment handling error");
         throw new Error("Payment handling failed");
     }
 };

@@ -36,12 +36,12 @@ export function TopUsers({ users, isLoading }: TopUsersProps) {
     }).format(amount)
 
   const getInitials = (name: string) => {
-    return name
-      .split(/[@\s]/)
-      .map((part) => part.charAt(0))
-      .slice(0, 2)
-      .join('')
-      .toUpperCase()
+    return name?.trim()
+      ?.split(/[@\s]/)
+      ?.map((part) => part.charAt(0))
+      ?.slice(0, 2)
+      ?.join('')
+      ?.toUpperCase() || ''
   }
 
   if (isLoading) {
@@ -68,7 +68,7 @@ export function TopUsers({ users, isLoading }: TopUsersProps) {
   }
 
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div>

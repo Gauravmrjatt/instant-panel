@@ -17,7 +17,7 @@ interface PaymentsResponse {
 }
 
 export async function getPayments(page: number = 0, limit: number = 10): Promise<PaymentsResponse> {
-  const res = await authFetch(`${apiConfig.baseUrl}/get/payments?page=${page}&limit=${limit}`)
+  const res = await authFetch(`${apiConfig.baseUrl}/api/v1/payments?page=${page}&limit=${limit}`)
   if (!res.ok) throw new Error('Failed to fetch payments')
   return res.json()
 }

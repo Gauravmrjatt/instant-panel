@@ -45,7 +45,7 @@ export default function TelegramAlertsPage() {
   const { data: settings, isLoading } = useQuery({
     queryKey: ['telegram-settings'],
     queryFn: async () => {
-      const res = await authFetch(`${apiConfig.baseUrl}/get/telegram-alert`)
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/users/me/telegram-alert`)
       return res.json()
     }
   })
@@ -64,8 +64,8 @@ export default function TelegramAlertsPage() {
 
   const updateMutation = useMutation({
     mutationFn: async (data: TelegramSettings) => {
-      const res = await authFetch(`${apiConfig.baseUrl}/update/telegram-settings`, {
-        method: 'POST',
+      const res = await authFetch(`${apiConfig.baseUrl}/api/v1/users/me/telegram-alert`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       })
