@@ -1,5 +1,5 @@
 # ===== Base =====
-FROM node:18-alpine
+FROM node:22-alpine
 
 # Enable pnpm
 RUN corepack enable
