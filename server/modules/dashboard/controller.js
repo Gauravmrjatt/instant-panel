@@ -5,6 +5,7 @@ const Click = require("../clicks/model");
 const Gateway = require("../gateway-settings/model");
 const axios = require("axios");
 const redisClient = require("../../lib/redisClient");
+const logger = require("../../lib/logger");
 
 async function getDashboard(req, res) {
   try {
@@ -115,7 +116,7 @@ async function getDashboard(req, res) {
     await redisClient.setEx(cacheKey, 300, JSON.stringify(responseData));
     res.json(responseData);
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.status(500).json({ status: false, message: "Internal server error" });
   }
 }
@@ -145,7 +146,7 @@ async function postDashboard(req, res) {
     ]);
     res.json({ status: true, data, users: data2 });
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.status(500).json({ status: false, message: "Internal server error" });
   }
 }

@@ -7,9 +7,10 @@ const Campaign = require("../campaigns/model");
 const myDetails = require("../../myDetails.json");
 const { v4: uuidv4 } = require("uuid");
 const { sendToQueue } = require("../../lib/rabbitMQ");
-const handelPayment = require("../../lib/handelPostBackPayments");
+const handlePayment = require("../../lib/handlePostBackPayments");
 const Notification = require("../../lib/handelNotification");
 const redisClient = require("../../lib/redisClient");
+const logger = require("../../lib/logger");
 const { LRUCache } = require("lru-cache");
 
 const postbackUserCache = new LRUCache({ max: 500, ttl: 3600_000 });
@@ -38,7 +39,7 @@ async function regeneratePostbackToken(userId) {
   return { status: true, msg: "Postback Updated Successfully", key: newID, url };
 }
 
-async function rejectLead(data) {
+async function queueLead(data) {
   try {
     await sendToQueue("lead_write", JSON.stringify(data));
   } catch (err) {
@@ -83,8 +84,12 @@ async function resolveCampaignPostback(CampaignToken) {
     camp = JSON.parse(camp);
     user = camp._userId;
   } else {
-    camp = await Campaign.findOne({ postbackToken: CampaignToken })
-      .select("_id userId postbackToken campStatus events delay ips same ip paytm prevEvent name referPending offerID")
+    const isObjectId = /^[a-f0-9]{24}$/i.test(CampaignToken);
+    const query = isObjectId
+      ? { $or: [{ postbackToken: CampaignToken }, { _id: CampaignToken }] }
+      : { postbackToken: CampaignToken };
+    camp = await Campaign.findOne(query)
+      .select("_id userId postbackToken campStatus events delay ips same ip paytm prevEvent name referPending userPending offerID")
       .populate("userId", "PostbackToken globalPostBack _id tgId")
       .lean();
     if (camp) {
@@ -101,8 +106,8 @@ async function resolvePostbackClick(click, userId) {
   if (clickId) return JSON.parse(clickId);
 
   clickId = await Click.findOne({ click, userId })
-    .select("_id userId campId user refer ip createdAt number")
-    .populate("campId", "campStatus events delay ips same ip paytm prevEvent name postbackToken referPending offerID")
+    .select("_id userId campId click user refer ip createdAt number")
+      .populate("campId", "campStatus events delay ips same ip paytm prevEvent name postbackToken referPending userPending offerID")
     .lean();
   if (clickId) await redisClient.setEx(cacheKey, 86400, JSON.stringify(clickId));
   return clickId;
@@ -162,6 +167,65 @@ async function checkBans(userId, userNumber, referNumber) {
   return { isUserBan, isReferBan };
 }
 
+async function getCapCounters(campId, event) {
+  const today = new Date().toISOString().split("T")[0];
+  const dailyKey = `cap:daily:${campId}:${event}:${today}`;
+  const totalKey = `cap:total:${campId}:${event}`;
+
+  const [dailyStr, totalStr] = await Promise.all([
+    redisClient.get(dailyKey),
+    redisClient.get(totalKey),
+  ]);
+
+  if (dailyStr && totalStr) {
+    return { daily: parseInt(dailyStr, 10), total: parseInt(totalStr, 10) };
+  }
+
+  if (!dailyStr) {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(startOfDay);
+    endOfDay.setDate(endOfDay.getDate() + 1);
+    const daily = await Lead.countDocuments({
+      campId,
+      event,
+      status: "Approved",
+      createdAt: { $gte: startOfDay, $lt: endOfDay },
+    });
+    await redisClient.set(dailyKey, daily, { NX: true, EX: 86400 });
+  }
+
+  if (!totalStr) {
+    const total = await Lead.countDocuments({
+      campId,
+      event,
+      status: "Approved",
+    });
+    await redisClient.set(totalKey, total, { NX: true, EX: 86400 });
+  }
+
+  const [finalDaily, finalTotal] = await Promise.all([
+    redisClient.get(dailyKey),
+    redisClient.get(totalKey),
+  ]);
+
+  return {
+    daily: parseInt(finalDaily || "0", 10),
+    total: parseInt(finalTotal || "0", 10),
+  };
+}
+
+async function incrementCapCounters(campId, event) {
+  const today = new Date().toISOString().split("T")[0];
+  const dailyKey = `cap:daily:${campId}:${event}:${today}`;
+  const totalKey = `cap:total:${campId}:${event}`;
+
+  await Promise.all([
+    redisClient.incr(dailyKey),
+    redisClient.incr(totalKey),
+  ]);
+}
+
 async function processPostback({ user, clickDoc, event, ip, query }) {
   const camp = clickDoc.campId;
 
@@ -196,33 +260,33 @@ async function processPostback({ user, clickDoc, event, ip, query }) {
 
   if (!(query.type && query.type == "manual")) {
     if (camp.ips.length > 0 && !camp.ips.includes(ip)) {
-      await rejectLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "REJECTED", message: "IP is not allowed", params: query, paymentStatus: "REJECTED" });
+      await queueLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "REJECTED", message: "IP is not allowed", params: query, paymentStatus: "REJECTED" });
       return { status: false, msg: "This IP is not allowed." };
     }
   }
 
   if (indexOfEvent == 0 && camp.delay && clicktoconv <= parseInt(camp.delay)) {
-    await rejectLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "REJECTED", message: "Click to conversion time delay is invalid", params: query, paymentStatus: "REJECTED" });
+    await queueLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "REJECTED", message: "Click to conversion time delay is invalid", params: query, paymentStatus: "REJECTED" });
     if (user.tgId && user.tgId.chatId) Notification(user.tgId.chatId, `<b>🛑 New Fraud Lead \n⚠️ Name : ${camp.name}\n♻️ OfferID : ${camp.offerID}\n🌀 Event : ${eventData.name}\n\n🔆 User Number :- ${clickDoc.user}\n📣 Reason :- Click to conversion time delay is invalid\n\n🔆 Refer Number :- ${clickDoc.user}\n📣 Reason :- Click to conversion time delay is invalid\n\n⭐️ Lead is Disputed and Any Payment is Not Debited ✔️\n🧲 Powered By <a href='https://earningarea.in/redirectto?instant'>Earning Area</a>\n</b>`).catch(() => {});
     return { status: false, msg: "Fraud Lead found" };
   }
 
   if (isUserBan) {
-    await rejectLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "REJECTED", message: "User Number is Banned", params: query, paymentStatus: "REJECTED", referPaymentStatus: "REJECTED" });
+    await queueLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "REJECTED", message: "User Number is Banned", params: query, paymentStatus: "REJECTED", referPaymentStatus: "REJECTED" });
     return { status: false, msg: "User Number is Banned" };
   }
   if (isReferBan) {
-    await rejectLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "REJECTED", message: "Refer Number is Banned", params: query, paymentStatus: "REJECTED", referPaymentStatus: "REJECTED" });
+    await queueLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "REJECTED", message: "Refer Number is Banned", params: query, paymentStatus: "REJECTED", referPaymentStatus: "REJECTED" });
     return { status: false, msg: "Refer Number is Banned" };
   }
 
   if (!camp.same && clickDoc.user.trim() === clickDoc.refer.trim()) {
-    await rejectLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "REJECTED", message: "User and refer number are the same", params: query, paymentStatus: "REJECTED", referPaymentStatus: "REJECTED" });
+    await queueLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "REJECTED", message: "User and refer number are the same", params: query, paymentStatus: "REJECTED", referPaymentStatus: "REJECTED" });
     return { status: false, msg: "User and refer number are the same" };
   }
 
   if (camp.ip && (await Lead.findOne({ campId: camp._id, ip: clickDoc.ip, event }).select("_id").lean())) {
-    await rejectLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "REJECTED", message: "Duplicate IP Address", params: query, paymentStatus: "REJECTED", referPaymentStatus: "REJECTED" });
+    await queueLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "REJECTED", message: "Duplicate IP Address", params: query, paymentStatus: "REJECTED", referPaymentStatus: "REJECTED" });
     return { status: false, msg: "One IP can claim only once" };
   }
 
@@ -236,27 +300,21 @@ async function processPostback({ user, clickDoc, event, ip, query }) {
   }
 
   if (camp.paytm && (await Lead.findOne({ campId: camp._id, user: userQuery, event }).select("_id").lean())) {
-    await rejectLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "Pending", message: "Duplicate User Number", params: query, paymentStatus: "PENDING", referPaymentStatus: "REJECTED" });
+    await queueLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "Pending", message: "Duplicate User Number", params: query, paymentStatus: "PENDING", referPaymentStatus: "REJECTED" });
     return { status: false, msg: "One user can claim only once" };
   }
 
-  const currentDate = new Date();
-  currentDate.setHours(0, 0, 0, 0);
-  const nextDate = new Date(currentDate);
-  nextDate.setDate(currentDate.getDate() + 1);
-
-  const [dailyApprovedLeads, totalApprovedLeads] = await Promise.all([
-    eventData.dailyCaps ? Lead.countDocuments({ campId: camp._id, event, status: "Approved", createdAt: { $gte: currentDate, $lt: nextDate } }) : Promise.resolve(0),
-    eventData.caps ? Lead.countDocuments({ campId: camp._id, event, status: "Approved" }) : Promise.resolve(0),
-  ]);
+  const { daily: dailyApprovedLeads, total: totalApprovedLeads } = eventData.dailyCaps || eventData.caps
+    ? await getCapCounters(camp._id, event)
+    : { daily: 0, total: 0 };
 
   if (eventData.caps && parseInt(eventData.caps) <= parseInt(totalApprovedLeads)) {
-    await rejectLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "Pending", message: "All the Leads have completed", params: query, paymentStatus: "PENDING", referPaymentStatus: "PENDING" });
+    await queueLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "Pending", message: "All the Leads have completed", params: query, paymentStatus: "PENDING", referPaymentStatus: "PENDING" });
     return { status: true, msg: "This Lead caps has been reached" };
   }
 
   if (eventData.dailyCaps && parseInt(eventData.dailyCaps) <= parseInt(dailyApprovedLeads)) {
-    await rejectLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "Pending", message: "All Daily Leads have completed", params: query, paymentStatus: "PENDING", referPaymentStatus: "PENDING" });
+    await queueLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "Pending", message: "All Daily Leads have completed", params: query, paymentStatus: "PENDING", referPaymentStatus: "PENDING" });
     return { status: true, msg: "This Lead daily caps has been reached" };
   }
 
@@ -269,7 +327,7 @@ async function processPostback({ user, clickDoc, event, ip, query }) {
     checkTime = IsprevEvent?.createdAt ?? null;
     if (isPrevEnable === true) {
       if (!IsprevEvent) {
-        await rejectLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "REJECTED", message: "Previous event not found", params: query, paymentStatus: "REJECTED", referPaymentStatus: "REJECTED" });
+        await queueLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "REJECTED", message: "Previous event not found", params: query, paymentStatus: "REJECTED", referPaymentStatus: "REJECTED" });
         return { status: false, msg: "Previous event not found" };
       }
       if (time > 0 && time != "") {
@@ -277,7 +335,7 @@ async function processPostback({ user, clickDoc, event, ip, query }) {
         const current = new Date();
         const timeDifference = (current - createdAt) / (1000 * 60);
         if (parseInt(timeDifference) <= parseInt(time)) {
-          await rejectLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "Pending", message: "Time difference is less than as you set between two events.", params: query, paymentStatus: "PENDING", referPaymentStatus: "PENDING" });
+          await queueLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "Pending", message: "Time difference is less than as you set between two events.", params: query, paymentStatus: "PENDING", referPaymentStatus: "PENDING" });
           return { status: false, msg: "Time difference is less than as you set between two events." };
         }
       }
@@ -285,11 +343,40 @@ async function processPostback({ user, clickDoc, event, ip, query }) {
   }
 
   if (eventData.payMode == "auto") {
-    handelPayment(user._id, eventData, { userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, params: query, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, clicktoconv }, user.tgId, camp, dailyApprovedLeads, totalApprovedLeads, clicktoconv)
-      .catch(err => console.error("handelPostBackPayment error:", err));
+    const paymentPayload = {
+      type: "postback_payment",
+      userId: user._id,
+      eventData,
+      lead: {
+        userAmount: eventData.user,
+        referAmount: eventData.refer,
+        click: clickDoc.click,
+        userId: user._id,
+        campId: camp._id,
+        clickId: clickDoc._id,
+        user: clickDoc.user,
+        refer: clickDoc.refer,
+        ip: clickDoc.ip,
+        event,
+        params: query,
+        uniqueClick: { campId: camp._id, event, clickId: clickDoc._id },
+        clicktoconv,
+      },
+      tg: user.tgId,
+      camp,
+      dailyApprovedLeads,
+      totalApprovedLeads,
+      clicktoconv,
+    };
+    try {
+      sendToQueue("payment_processing", JSON.stringify(paymentPayload));
+    } catch (err) {
+      logger.warn({ err: err.message }, "payment_processing queue unavailable — processing payment synchronously");
+      await handlePayment(user._id, eventData, paymentPayload.lead, user.tgId, camp, dailyApprovedLeads, totalApprovedLeads, clicktoconv);
+      incrementCapCounters(camp._id, event).catch(() => {});
+    }
   } else {
-    rejectLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "Pending", message: "This Lead request has been successfully completed. Payment is manual", params: query, paymentStatus: "PENDING", payMessage: "You have set payment mode to manual", referPaymentStatus: "PENDING", referPayMessage: "You have set payment mode to manual" })
-      .catch(err => console.error("rejectLead error:", err));
+    await queueLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "Pending", message: "This Lead request has been successfully completed. Payment is manual", params: query, paymentStatus: "PENDING", payMessage: "You have set payment mode to manual", referPaymentStatus: "PENDING", referPayMessage: "You have set payment mode to manual" });
   }
 
   redisClient.del(`dashboard:${user._id}`).catch(() => {});
@@ -300,7 +387,7 @@ module.exports = {
   getPostbackConfig,
   toggleGlobalPostback,
   regeneratePostbackToken,
-  rejectLead,
+  queueLead,
   clearUserCache,
   resolvePostbackUser,
   resolveCampaignPostback,
@@ -309,4 +396,5 @@ module.exports = {
   checkLeadDuplicates,
   checkBans,
   processPostback,
+  incrementCapCounters,
 };

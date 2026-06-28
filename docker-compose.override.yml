@@ -16,6 +16,7 @@ services:
     container_name: instant-backend
     ports:
       - "5000:5000"
+      - "9092:9092"
     env_file:
       - .env
     environment:

@@ -6,6 +6,7 @@ const PendingPayments = require("../payments/model").PendingPayment;
 const mongoose = require("mongoose");
 const ObjectId = mongoose.Types.ObjectId;
 const handelPayment = require("../../lib/handelPayments");
+const logger = require("../../lib/logger");
 
 async function getCamp(req, res) {
   try {
@@ -18,7 +19,7 @@ async function getCamp(req, res) {
     if (!isCamp) return res.json({ status: false, msg: "Invalid campaign id" });
     return res.json({ status: true, msg: "Details found", data: isCamp });
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.json({ status: false, msg: "Internal server error", error: error.message });
   }
 }
@@ -38,7 +39,7 @@ async function checkRefer(req, res) {
     ]);
     return res.json({ status: true, msg: "Refers Details found", count: refers.length, clicks: clicks.length, data: refers });
   } catch (error) {
-    console.error("Error in checkRefer:", error);
+    logger.error({ err: error }, "Error in checkRefer");
     return res.status(500).json({ status: false, msg: "Internal server error", error: error.message });
   }
 }
@@ -64,7 +65,7 @@ async function userAPI(req, res) {
     }));
     return res.json({ status: true, msg: "User Details found", leadscount: leads.length, leads: data });
   } catch (error) {
-    console.error("Error in userAPI:", error);
+    logger.error({ err: error }, "Error in userAPI");
     return res.json({ status: true, msg: "internal server error", error });
   }
 }
@@ -86,7 +87,7 @@ async function checkPending(req, res) {
     if (result.length === 0) return res.status(404).json({ status: false, msg: "No pending payment found" });
     return res.json({ status: true, msg: "Pending payment found", totalUserAmount: result[0].totalUserAmount, data: result[0].data });
   } catch (error) {
-    console.error("Error in checkPending:", error);
+    logger.error({ err: error }, "Error in checkPending");
     return res.status(500).json({ status: false, msg: "Internal server error", error: error.message });
   }
 }
@@ -106,7 +107,7 @@ async function releasePending(req, res) {
     await PendingPayments.updateMany({ userId: user._id, campId: campaign._id, status: "PENDING", user: number }, { status: "ACCEPTED", paymentStatus: paymentResult.status, payMessage: paymentResult.statusMessage || paymentResult.message || "no message found", response: paymentResult });
     return res.json({ status: true, payment: paymentResult, total: totalAmount });
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.json({ status: false, msg: "Something went wrong" });
   }
 }

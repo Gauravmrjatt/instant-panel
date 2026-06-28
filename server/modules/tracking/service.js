@@ -6,6 +6,7 @@ const DeviceDetector = require("node-device-detector");
 const redisClient = require("../../lib/redisClient");
 const { sendToQueue } = require("../../lib/rabbitMQ");
 const { LRUCache } = require("lru-cache");
+const logger = require("../../lib/logger");
 
 const detector = new DeviceDetector({ clientIndexes: true, deviceIndexes: true, deviceAliasCode: false });
 const generateUUID = () => uuidv4().replace(/-/g, "");
@@ -56,7 +57,7 @@ async function processClick(campInfo, aff_click_id, sub_aff_id, userIp, deviceQu
   try {
     sendToQueue("click_buffer", JSON.stringify(clickDoc));
   } catch (err) {
-    console.warn("RabbitMQ unavailable — saving click directly to DB");
+    logger.warn("RabbitMQ unavailable — saving click directly to DB");
     await Click.create(clickDoc);
   }
 

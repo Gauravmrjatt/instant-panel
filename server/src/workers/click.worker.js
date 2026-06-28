@@ -1,5 +1,6 @@
 const { connectToRabbitMQ, createQueue, getChannel, channelEmitter } = require("../../lib/rabbitMQ");
 const Click = require("../../modules/clicks/model");
+const logger = require("../../lib/logger");
 
 const QUEUE = "click_buffer";
 const BATCH_SIZE = 1000;
@@ -19,14 +20,14 @@ async function flushClicks() {
   try {
     await Click.insertMany(clickDocs, { ordered: false });
     messages.forEach((msg) => channel.ack(msg));
-    console.log(`ClickWorker >> Flushed ${batch.length} clicks`);
+    logger.info({ count: batch.length }, "ClickWorker >> Flushed clicks");
   } catch (err) {
     if (err.code === 11000) {
       messages.forEach((msg) => channel.ack(msg));
-      console.log(`ClickWorker >> Flushed ${batch.length} clicks (${err.writeErrors?.length || 0} duplicates skipped)`);
+      logger.info({ count: batch.length, duplicates: err.writeErrors?.length || 0 }, "ClickWorker >> Flushed clicks (duplicates skipped)");
     } else {
       messages.forEach((msg) => channel.nack(msg, false, true));
-      console.error("ClickWorker >> Insert error:", err.message);
+      logger.error({ err: err.message }, "ClickWorker >> Insert error");
     }
   }
 }
@@ -44,14 +45,14 @@ async function setupConsumer() {
         await flushClicks();
       }
     } catch (err) {
-      console.error("ClickWorker >> Parse error:", err.message);
+      logger.error({ err: err.message }, "ClickWorker >> Parse error");
       channel.nack(msg, false, true);
     }
   };
   const result = await channel.consume(QUEUE, handler, { noAck: false });
   consumerTag = result.consumerTag;
   consumerActive = true;
-  console.log("ClickWorker >> Consumer registered");
+  logger.info("ClickWorker >> Consumer registered");
 }
 
 async function startClickWorker() {
@@ -63,10 +64,12 @@ async function startClickWorker() {
 
   channelEmitter.on("reconnected", async () => {
     consumerActive = false;
-    await setupConsumer();
+    try { await setupConsumer(); } catch (err) {
+      logger.error({ err: err.message }, "ClickWorker >> Failed to re-setup consumer on reconnect");
+    }
   });
 
-  console.log("ClickWorker >> Started (buffer: 500/100ms)");
+  logger.info("ClickWorker >> Started");
 }
 
 async function stopClickWorker() {

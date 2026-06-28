@@ -1,0 +1,218 @@
+services:
+  # ── App ──────────────────────────────────────────────
+  frontend:
+    image: ghcr.io/gauravmrjatt/instant-frontend:latest
+    container_name: instant-frontend-v2
+    ports:
+      - "3101:3000"
+    env_file:
+      - .env
+    environment:
+      - NEXT_PUBLIC_API_URL=https://backend5.logicpay.in
+    networks:
+      - instant-panel
+    depends_on:
+      - backend
+
+  backend:
+    image: ghcr.io/gauravmrjatt/instant-backend:latest
+    container_name: instant-backend-v2
+    ports:
+      - "5100:5000"
+      - "9092:9092"
+    env_file:
+      - .env
+    environment:
+      - PORT=5000
+      - DB_URL=mongodb://rootUser:Aiujgfiuyugsdt8726@mongo:27017/abc?authSource=admin
+      - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - CORS_ORIGIN=https://panel5.logicpay.in
+    networks:
+      - instant-panel
+    depends_on:
+      - mongo
+      - redis
+      - rabbitmq
+
+  # ── Infra ────────────────────────────────────────────
+  mongo:
+    image: mongo:7
+    container_name: mongodb-v2
+    ports:
+      - "27019:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=rootUser
+      - MONGO_INITDB_ROOT_PASSWORD=Aiujgfiuyugsdt8726
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - instant-panel
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: mongo-express-v2
+    ports:
+      - "8082:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongo
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=rootUser
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=Aiujgfiuyugsdt8726
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=uygdughfhdfguhdf@37247
+    networks:
+      - instant-panel
+    depends_on:
+      - mongo
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis-v2
+    ports:
+      - "6381:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - instant-panel
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq-v2
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+      - "15693:15692"
+      - "5553:5552"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    command:
+      - sh
+      - -ec
+      - |
+        rabbitmq-plugins enable --offline rabbitmq_stream rabbitmq_stream_management rabbitmq_prometheus
+        printf "stream.listeners.tcp.default = 5552\n" >/etc/rabbitmq/rabbitmq.conf
+        exec rabbitmq-server
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - instant-panel
+
+  # ── Monitoring ──────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus-v2
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+      - "--web.enable-lifecycle"
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    networks:
+      - instant-panel
+    depends_on:
+      - backend
+
+  mongodb-exporter:
+    image: bitnami/mongodb-exporter:latest
+    container_name: mongodb-exporter-v2
+    ports:
+      - "9217:9216"
+    environment:
+      - MONGODB_URI=mongodb://rootUser:Aiujgfiuyugsdt8726@mongo:27017/abc?authSource=admin
+    networks:
+      - instant-panel
+    depends_on:
+      - mongo
+
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: redis-exporter-v2
+    ports:
+      - "9122:9121"
+    environment:
+      - REDIS_ADDR=redis://redis:6379
+    networks:
+      - instant-panel
+    depends_on:
+      - redis
+
+  loki:
+    image: grafana/loki:latest
+    container_name: loki-v2
+    ports:
+      - "3102:3100"
+    command: -config.file=/etc/loki/loki-config.yml
+    volumes:
+      - ./loki-config.yml:/etc/loki/loki-config.yml
+      - loki-data:/loki
+    networks:
+      - instant-panel
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail-v2
+    command: -config.file=/etc/promtail/promtail-config.yml
+    volumes:
+      - ./promtail-config.yml:/etc/promtail/promtail-config.yml
+      - ./logs:/var/log/instant-panel
+    networks:
+      - instant-panel
+    depends_on:
+      - loki
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana-v2
+    ports:
+      - "3002:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=
+      - GF_ENABLE_PROMETHEUS_METRICS=true
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+      - ./grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - instant-panel
+    depends_on:
+      - prometheus
+      - loki
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: watchtower-v2
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=300
+      - WATCHTOWER_INCLUDE_STOPPED=true
+      - WATCHTOWER_REVIVE_STOPPED=false
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    networks:
+      - instant-panel
+    restart: unless-stopped
+
+networks:
+  instant-panel:
+    driver: bridge
+
+volumes:
+  mongo-data:
+  redis-data:
+  rabbitmq-data:
+  prometheus-data:
+  loki-data:
+  grafana-data:

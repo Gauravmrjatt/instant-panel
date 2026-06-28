@@ -1,5 +1,6 @@
 const service = require("./service");
 const { clearCampaignCache } = require("../tracking/service");
+const logger = require("../../lib/logger");
 
 async function create(req, res) {
   try {
@@ -29,7 +30,7 @@ async function getById(req, res) {
     const result = await service.getCampaignById(req.user.db._id, req.params.id);
     res.json(result);
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.json({ status: false, msg: "Something went wrong" });
   }
 }
@@ -44,7 +45,7 @@ async function update(req, res) {
     clearCampaignCache(campaignId);
     res.json(result);
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.status(500).json({ status: false, message: "Internal server error" });
   }
 }
@@ -57,7 +58,7 @@ async function remove(req, res) {
     if (!result.status) return res.status(400).json(result);
     res.json(result);
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.status(500).json({ status: false, message: "Internal server error" });
   }
 }

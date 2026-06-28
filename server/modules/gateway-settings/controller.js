@@ -1,4 +1,5 @@
 const service = require("./service");
+const logger = require("../../lib/logger");
 
 async function getSettings(req, res) {
   try {
@@ -6,7 +7,7 @@ async function getSettings(req, res) {
     const result = await service.getGatewaySettings(userDetails._id, userDetails.userId);
     res.json(result);
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.json({ status: false, msg: "Something went wrong", error });
   }
 }
@@ -17,7 +18,7 @@ async function updateSettings(req, res) {
     const result = await service.updateGatewaySettings(userDetails._id, req.body);
     res.json(result);
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.json({ status: false, msg: "Something went wrong", error });
   }
 }

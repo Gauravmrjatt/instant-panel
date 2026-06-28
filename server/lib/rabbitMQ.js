@@ -1,16 +1,17 @@
 const amqp = require("amqplib");
 const EventEmitter = require("events");
+const logger = require("./logger");
 
 let connection = null;
 let channel = null;
 let connecting = false;
 let reconnectAttempts = 0;
+let shuttingDown = false;
 const MAX_RECONNECT_ATTEMPTS = 10;
 const RECONNECT_BASE_DELAY = 1000;
 
 const channelEmitter = new EventEmitter();
 
-// Track consumers for re-registration on reconnect
 const consumers = [];
 
 async function getConnection() {
@@ -30,26 +31,27 @@ async function getConnection() {
 
   connecting = true;
   try {
-    const rabbitMQUrl = process.env.RABBITMQ_URL || "amqp://localhost";
+    let rabbitMQUrl = process.env.RABBITMQ_URL || "amqp://localhost";
+    if (!rabbitMQUrl.includes("heartbeat=")) rabbitMQUrl += (rabbitMQUrl.includes("?") ? "&" : "?") + "heartbeat=30";
     connection = await amqp.connect(rabbitMQUrl);
 
     connection.on("close", async () => {
-      console.log("RabbitMQ connection closed");
+      logger.info("RabbitMQ connection closed");
       connection = null;
       channel = null;
       channelEmitter.emit("connection_lost");
-      await reconnect();
+      if (!shuttingDown) await reconnect();
     });
 
     connection.on("error", (err) => {
-      console.error("RabbitMQ connection error:", err.message);
+      logger.error({ err: err.message }, "RabbitMQ connection error");
     });
 
     reconnectAttempts = 0;
-    console.log("Connected to RabbitMQ");
+    logger.info("Connected to RabbitMQ");
     return connection;
   } catch (error) {
-    console.error("Failed to connect to RabbitMQ:", error);
+    logger.error({ err: error }, "Failed to connect to RabbitMQ");
     connection = null;
     throw error;
   } finally {
@@ -62,30 +64,30 @@ async function reRegisterConsumers() {
     try {
       await channel.assertQueue(queue, { durable: true });
       channel.consume(queue, handler, { noAck: false });
-      console.log(`Re-registered consumer for queue: ${queue}`);
+      logger.info({ queue }, "Re-registered consumer for queue");
     } catch (err) {
-      console.error(`Failed to re-register consumer for ${queue}:`, err.message);
+      logger.error({ queue, err: err.message }, "Failed to re-register consumer");
     }
   }
 }
 
 async function reconnect() {
   if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-    console.error("Max reconnect attempts reached");
+    logger.error("Max reconnect attempts reached");
     return;
   }
   reconnectAttempts++;
   const delay = RECONNECT_BASE_DELAY * Math.pow(2, reconnectAttempts - 1);
-  console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttempts})`);
+  logger.info({ delay, attempt: reconnectAttempts }, "RabbitMQ reconnecting");
   await new Promise((resolve) => setTimeout(resolve, delay));
   try {
     await getConnection();
     await getChannel();
     await reRegisterConsumers();
     channelEmitter.emit("reconnected");
-    console.log("RabbitMQ reconnected and consumers restored");
+    logger.info("RabbitMQ reconnected and consumers restored");
   } catch (err) {
-    console.error("Reconnect failed:", err.message);
+    logger.error({ err: err.message }, "Reconnect failed");
     reconnect();
   }
 }
@@ -95,8 +97,11 @@ async function getChannel() {
   const conn = await getConnection();
   channel = await conn.createChannel();
   channel.on("error", (err) => {
-    console.error("RabbitMQ channel error:", err.message);
+    logger.error({ err: err.message }, "RabbitMQ channel error");
     channelEmitter.emit("channel_error", err);
+  });
+  channel.on("close", () => {
+    channel = null;
   });
   return channel;
 }
@@ -108,18 +113,55 @@ async function connectToRabbitMQ() {
 
 async function createQueue(queueName) {
   const ch = await getChannel();
-  await ch.assertQueue(queueName, { durable: true });
+  await initDLX();
+  const dlxQueues = ["click_buffer", "payment_processing", "lead_write", "postback_processing"];
+  const opts = dlxQueues.includes(queueName)
+    ? { durable: true, deadLetterExchange: "dlx", deadLetterRoutingKey: `${queueName}_dlq` }
+    : { durable: true };
+  try {
+    await ch.assertQueue(queueName, opts);
+  } catch (err) {
+    if (err.code === 406) {
+      logger.warn({ queue: queueName }, "Queue exists without DLX — using durable only");
+      channel = null;
+      const newCh = await getChannel();
+      await newCh.assertQueue(queueName, { durable: true });
+    } else throw err;
+  }
+}
+
+async function initDLX() {
+  const ch = await getChannel();
+  await ch.assertExchange("dlx", "direct", { durable: true });
+  const dlqQueues = ["click_buffer", "payment_processing", "lead_write", "postback_processing"];
+  await Promise.all(dlqQueues.map((q) =>
+    ch.assertQueue(`${q}_dlq`, { durable: true }).then(() =>
+      ch.bindQueue(`${q}_dlq`, "dlx", `${q}_dlq`)
+    )
+  ));
 }
 
 async function assertQueues() {
   const ch = await getChannel();
-  await Promise.all([
-    ch.assertQueue("click_buffer", { durable: true }),
-    ch.assertQueue("payment_processing", { durable: true }),
-    ch.assertQueue("dead_letter", { durable: true }),
-    ch.assertQueue("lead_write", { durable: true }),
-    ch.assertQueue("postback_processing", { durable: true }),
-  ]);
+  await initDLX();
+  const queues = [
+    ["click_buffer", "click_buffer_dlq"],
+    ["payment_processing", "payment_processing_dlq"],
+    ["lead_write", "lead_write_dlq"],
+    ["postback_processing", "postback_processing_dlq"],
+  ];
+  for (const [q, dlq] of queues) {
+    try {
+      await ch.assertQueue(q, { durable: true, deadLetterExchange: "dlx", deadLetterRoutingKey: dlq });
+    } catch (err) {
+      if (err.code === 406) {
+        logger.warn({ queue: q }, "Queue exists without DLX — using durable only");
+        channel = null;
+        const newCh = await getChannel();
+        await newCh.assertQueue(q, { durable: true });
+      } else throw err;
+    }
+  }
 }
 
 function sendToQueue(queueName, message) {
@@ -128,7 +170,10 @@ function sendToQueue(queueName, message) {
       "RabbitMQ channel is not initialized. Call connectToRabbitMQ first."
     );
   }
-  channel.sendToQueue(queueName, Buffer.from(message));
+  const ok = channel.sendToQueue(queueName, Buffer.from(message));
+  if (ok === false) {
+    throw new Error("sendToQueue returned false — channel is closing/closed");
+  }
 }
 
 function sendMessage(queueName, message) {
@@ -138,7 +183,7 @@ function sendMessage(queueName, message) {
     );
   }
   channel.sendToQueue(queueName, Buffer.from(message));
-  console.log(`Message sent to queue "${queueName}": ${message}`);
+  logger.debug({ queue: queueName, message }, "Message sent to queue");
 }
 
 function consumeMessages(queueName, onMessage) {
@@ -151,10 +196,11 @@ function consumeMessages(queueName, onMessage) {
     if (!msg) return;
     try {
       await onMessage(msg.content.toString());
-      channel.ack(msg);
+      try { channel.ack(msg); } catch { /* channel may be closed */ }
     } catch (err) {
-      console.error(`consumeMessages >> Error processing ${queueName}:`, err.message);
-      channel.nack(msg, false, true);
+      logger.error({ queue: queueName, err: err.message }, "Error processing message");
+      const isConnErr = err?.message?.includes("PoolClosed") || err?.message?.includes("ClientClosed") || err?.code === 11000 || err?.message?.includes("closed");
+      try { channel.nack(msg, false, !isConnErr); } catch { /* channel may be closed */ }
     }
   };
   channel.consume(queueName, handler, { noAck: false });
@@ -162,15 +208,16 @@ function consumeMessages(queueName, onMessage) {
 }
 
 async function closeConnection() {
-  if (channel) {
-    await channel.close();
-    channel = null;
-  }
-  if (connection) {
-    await connection.close();
-    connection = null;
-    console.log("RabbitMQ connection closed");
-  }
+  shuttingDown = true;
+  try {
+    if (channel) { await channel.close(); }
+  } catch { channel = null; }
+  channel = null;
+  try {
+    if (connection) { await connection.close(); }
+  } catch { connection = null; }
+  connection = null;
+  logger.info("RabbitMQ connection closed");
 }
 
 module.exports = {
@@ -183,5 +230,6 @@ module.exports = {
   getConnection,
   getChannel,
   assertQueues,
+  initDLX,
   channelEmitter,
 };

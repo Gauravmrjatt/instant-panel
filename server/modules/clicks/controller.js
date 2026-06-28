@@ -1,12 +1,13 @@
 const service = require("./service");
+const logger = require("../../lib/logger");
 
 async function getClick(req, res) {
   try {
     const result = await service.getClick(req.user.db._id, req.params.id, req.query.event);
     res.json(result);
   } catch (error) {
+    logger.error({ err: error });
     res.json({ status: false, msg: "Somthing went wrong", error });
-    console.log(error);
   }
 }
 
@@ -18,7 +19,7 @@ async function exportClicks(req, res) {
     res.setHeader("Content-Disposition", `attachment; filename="${result.filename}"`);
     res.send(result.csv);
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.status(500).json({ status: false, msg: "Failed to export clicks" });
   }
 }
@@ -28,7 +29,7 @@ async function search(req, res) {
     const result = await service.searchClicks(req.user.db._id, req.body.data);
     res.json(result);
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.json({ status: false, msg: "Something went wrong", error });
   }
 }

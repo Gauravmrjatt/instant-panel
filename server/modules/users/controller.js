@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
 const multer = require("multer");
 const path = require("path");
+const logger = require("../../lib/logger");
 
 const storage = multer.diskStorage({
   destination: "./uploads",
@@ -16,7 +17,7 @@ async function getProfile(req, res) {
     const result = await service.getUserProfile(req.user.db.userId);
     res.json(result);
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.json({ status: false, msg: "Something went wrong", error });
   }
 }
@@ -26,7 +27,7 @@ async function getSessions(req, res) {
     const result = await service.getUserSessions(req.user.db._id);
     res.json(result);
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.json({ status: false, msg: "Something went wrong", error });
   }
 }
@@ -40,7 +41,7 @@ async function uploadPhoto(req, res) {
       res.json(result);
     });
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.json({ status: false, msg: "Something went wrong", error });
   }
 }

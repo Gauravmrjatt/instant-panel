@@ -1,34 +1,35 @@
 const { startClickWorker, stopClickWorker, flushClicks, getClickFlushTimer, getClickBuffer } = require("./click.worker");
 const { startLeadWorker, stopLeadWorker, flushLeads, getLeadFlushTimer, getLeadBuffer } = require("./lead.worker");
 const { startPostbackWorker } = require("./postback.worker");
+const logger = require("../../lib/logger");
 
 async function startWorkers() {
   if (process.env.NODE_ENV !== "test") {
     try {
       await startClickWorker();
-      console.log("Workers >> Click worker started");
+      logger.info("Workers >> Click worker started");
     } catch (err) {
-      console.error("Workers >> Click worker failed:", err.message);
+      logger.error({ err: err.message }, "Workers >> Click worker failed");
     }
 
     try {
       require("./payment.worker");
     } catch (err) {
-      console.error("Workers >> Payment worker failed:", err.message);
+      logger.error({ err: err.message }, "Workers >> Payment worker failed");
     }
 
     try {
       await startLeadWorker();
-      console.log("Workers >> Lead worker started");
+      logger.info("Workers >> Lead worker started");
     } catch (err) {
-      console.error("Workers >> Lead worker failed:", err.message);
+      logger.error({ err: err.message }, "Workers >> Lead worker failed");
     }
 
     try {
       await startPostbackWorker();
-      console.log("Workers >> Postback worker started");
+      logger.info("Workers >> Postback worker started");
     } catch (err) {
-      console.error("Workers >> Postback worker failed:", err.message);
+      logger.error({ err: err.message }, "Workers >> Postback worker failed");
     }
   }
 }

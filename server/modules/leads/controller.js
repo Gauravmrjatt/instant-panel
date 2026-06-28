@@ -1,4 +1,5 @@
 const service = require("./service");
+const logger = require("../../lib/logger");
 
 async function list(req, res) {
   try {
@@ -17,7 +18,7 @@ async function exportLeads(req, res) {
     res.setHeader("Content-Disposition", `attachment; filename="${result.filename}"`);
     res.send(result.csv);
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.status(500).json({ status: false, msg: "Failed to export leads" });
   }
 }
@@ -30,8 +31,8 @@ async function updateStatus(req, res) {
     const result = await service.updateLeadStatus(userDetails._id, leadId, leadStatus, event);
     res.json(result);
   } catch (error) {
+    logger.error({ err: error });
     res.json({ status: false, msg: "Somthing went wrong", error });
-    console.log(error);
   }
 }
 
@@ -43,8 +44,8 @@ async function approve(req, res) {
     const result = await service.approveLead(userDetails._id, leadId, leadStatus, userDetails.tgId);
     res.json(result);
   } catch (error) {
+    logger.error({ err: error });
     res.json({ status: false, msg: "Somthing went wrong", error });
-    console.log(error);
   }
 }
 

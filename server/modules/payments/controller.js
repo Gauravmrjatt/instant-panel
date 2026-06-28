@@ -1,5 +1,6 @@
 const service = require("./service");
 const Notification = require("../../lib/handelNotification");
+const logger = require("../../lib/logger");
 
 async function getPayments(req, res) {
   try {
@@ -19,7 +20,7 @@ async function updatePayment(req, res) {
     const result = await service.processPaymentForLead(userDetails._id, leadId, event, userDetails.tgId);
     res.json(result);
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.json({ status: false, msg: "Something went wrong", error });
   }
 }
@@ -31,7 +32,7 @@ async function payToUser(req, res) {
     if (result.tgText) Notification(userDetails.tgId.chatId, result.tgText);
     res.json(result);
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.json({ status: false, msg: "Something went wrong", error });
   }
 }
@@ -42,7 +43,7 @@ async function getPendingPayments(req, res) {
     const result = await service.getPendingPayments(req.user.db._id, campaignId);
     res.json(result);
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.status(500).json({ status: false, message: "Internal server error" });
   }
 }
@@ -55,7 +56,7 @@ async function approvePending(req, res) {
     const result = await service.approvePendingPayments(userDetails._id, campaignId, number, comment);
     res.json(result);
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.json({ status: false, msg: "Something went wrong", error });
   }
 }
@@ -66,7 +67,7 @@ async function rejectPending(req, res) {
     const result = await service.rejectPendingPayments(req.user.db._id, campaignId);
     res.json(result);
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.json({ status: false, msg: "Something went wrong", error });
   }
 }

@@ -1,5 +1,5 @@
 jest.mock("../../lib/redisClient");
-jest.mock("../../lib/handelPostBackPayments", () => jest.fn(() => Promise.resolve()));
+jest.mock("../../lib/handlePostBackPayments", () => jest.fn(() => Promise.resolve()));
 jest.mock("../../lib/handelNotification", () => jest.fn(() => Promise.resolve()));
 
 const request = require("supertest");

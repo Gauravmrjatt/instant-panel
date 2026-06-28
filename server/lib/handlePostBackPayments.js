@@ -5,9 +5,11 @@ const Payment = require("../modules/payments/model");
 const { Notification, hideMiddleFourLetters } = require("./handelNotification");
 const PendingPayments = require("../lib/savePendingPayments");
 const redisClient = require("../lib/redisClient");
+const logger = require("./logger");
+const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const replaceAllPlaceholders = (str, replacements) => {
   for (const placeholder in replacements) {
-    str = str?.replace(new RegExp(placeholder, "g"), replacements[placeholder]);
+    str = str?.replace(new RegExp(escapeRegex(placeholder), "g"), replacements[placeholder]);
   }
   return str;
 };
@@ -20,13 +22,9 @@ const fetchFromRedisOrDb = async (key, dbFetchFunction, expiry = 3600) => {
 
   const value = await dbFetchFunction();
 
-  if (value) await redisClient.set(key, JSON.stringify(value), expiry);
+  if (value) await redisClient.set(key, JSON.stringify(value), { EX: expiry });
 
   return value;
-};
-
-const savePendingPayment = async (data) => {
-  await PendingPayments(data);
 };
 
 const sendNotification = async (tg, message) => {
@@ -34,13 +32,9 @@ const sendNotification = async (tg, message) => {
   if (tg.username) Notification(tg.username, message);
 };
 
-const handleApiFetch = async (url, fallbackResponse = { data: {} }) => {
-  try {
-    return await axios.get(url);
-  } catch (error) {
-    console.error("API Fetch Error:", error);
-    return fallbackResponse;
-  }
+const handleApiFetch = async (url) => {
+  const response = await axios.get(url, { timeout: 10000 });
+  return response;
 };
 
 const savePaymentRecords = async (paymentData, paymentRefer) => {
@@ -50,7 +44,7 @@ const savePaymentRecords = async (paymentData, paymentRefer) => {
   ]);
 };
 
-const handelPayment = async (
+const handlePayment = async (
   userId,
   eventData,
   lead,
@@ -99,13 +93,14 @@ const handelPayment = async (
         ? replaceAllPlaceholders(gatewaySetting?.url, replacementsOfRefer)
         : `https://toolsadda.in/nogetway.php?guid=${gatewaySetting?.guid}&amo=${eventData.user}&num=${lead.user}&com=${eventData.userComment}&order-id=${orderId}`;
 
-    const userResponse = camp.userPending
-      ? { data: { status: "PENDING", statusMessage: "Payment pending" } }
-      : await handleApiFetch(gatewayUrl);
-
-    const referResponse = camp.referPending
-      ? { data: { status: "PENDING", statusMessage: "Payment pending" } }
-      : await handleApiFetch(gatewayUrlRefer);
+    const [userResponse, referResponse] = await Promise.all([
+      camp.userPending
+        ? Promise.resolve({ data: { status: "PENDING", statusMessage: "Payment pending" } })
+        : handleApiFetch(gatewayUrl),
+      camp.referPending
+        ? Promise.resolve({ data: { status: "PENDING", statusMessage: "Payment pending" } })
+        : handleApiFetch(gatewayUrlRefer),
+    ]);
 
     PAYSTATUS = userResponse?.data?.status ?? "UNKNOWN";
     PAYMESSAGE =
@@ -122,7 +117,7 @@ const handelPayment = async (
       "no message found";
 
     if (camp.userPending) {
-      await savePendingPayment({
+      await PendingPayments({
         userId,
         campId: camp,
         clickId: lead.clickId,
@@ -140,7 +135,7 @@ const handelPayment = async (
     }
 
     if (camp.referPending) {
-      await savePendingPayment({
+      await PendingPayments({
         userId,
         campId: camp,
         clickId: lead.clickId,
@@ -211,7 +206,7 @@ const handelPayment = async (
 🧲 Powered By <a href='https://earningarea.org/redirectto?instant'>Earning Area</a>
 </b>`;
 
-    await sendNotification(tg, notificationMessage);
+    sendNotification(tg, notificationMessage).catch(() => {});
 
     await saveLead({
       ...lead,
@@ -223,9 +218,9 @@ const handelPayment = async (
       referPayMessage: PAYMESSAGEREFER,
     });
   } catch (error) {
-    console.error("Error in handelPayment:", error);
+    logger.error({ err: error }, "Error in handlePayment");
     throw new Error("Payment handling failed");
   }
 };
 
-module.exports = handelPayment;
+module.exports = handlePayment;
