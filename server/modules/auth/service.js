@@ -5,6 +5,7 @@ const myDetails = require("../../myDetails.json");
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
 const nodemailer = require("nodemailer");
+const redisClient = require("../../lib/redisClient");
 
 async function register(data) {
   const { username, password, email, phone, plan } = data;
@@ -80,14 +81,19 @@ async function reset(token, password) {
   if (!password) return { status: false, msg: "Password is required" };
   record.isUsed = true;
   record.userId.password = password;
+  const oldTokens = record.userId.loginToken || [];
   record.userId.loginToken = [uuidv4()];
   await record.userId.save();
   await record.save();
+  for (const token of oldTokens) {
+    redisClient.del(`session:${token}`).catch(() => {});
+  }
   return { status: true, msg: "Password reset successfully" };
 }
 
 async function logout(loginToken) {
   await LoginToken.deleteOne({ token: loginToken });
+  redisClient.del(`session:${loginToken}`).catch(() => {});
   return { status: true, msg: "Logged out" };
 }
 

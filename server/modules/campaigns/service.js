@@ -42,21 +42,25 @@ async function getCampaignById(userId, id) {
 
 async function updateCampaign(userId, id, data) {
   if (!id) return { status: false, message: "Missing _id field" };
-  await Campaign.findByIdAndUpdate({ userId, _id: id }, { ...data });
+  const before = await Campaign.findOneAndUpdate({ userId, _id: id }, { ...data });
+  if (!before) return { status: false, msg: "Campaign not found" };
   await Promise.all([
     redisClient.del(`campaign:${id}`),
     redisClient.del(`campaigns:${userId}`),
+    ...(before.postbackToken ? [redisClient.del(`postbackCamp:${before.postbackToken}`)] : []),
   ]);
   return { status: true, data: {} };
 }
 
 async function deleteCampaign(userId, id) {
   if (!id) return { status: false, message: "Missing _id field" };
-  await Campaign.findByIdAndDelete({ userId, _id: id });
+  const campaign = await Campaign.findOneAndDelete({ userId, _id: id });
+  if (!campaign) return { status: false, msg: "Campaign not found" };
   await Promise.all([
     redisClient.del(`campaign:${id}`),
     redisClient.del(`dashboard:${userId}`),
     redisClient.del(`campaigns:${userId}`),
+    ...(campaign.postbackToken ? [redisClient.del(`postbackCamp:${campaign.postbackToken}`)] : []),
   ]);
   return { status: true, msg: "Deleted Successfully" };
 }

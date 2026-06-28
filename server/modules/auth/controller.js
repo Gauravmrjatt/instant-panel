@@ -1,6 +1,7 @@
 const service = require("./service");
 const { getRequestIpAddress, getRequestDeviceInfo } = require("../../lib/userInfo");
 const requestIp = require("request-ip");
+const logger = require("../../lib/logger");
 
 async function register(req, res) {
   const { username, password, email, phone } = req.body;
@@ -45,7 +46,7 @@ async function login(req, res) {
     });
     res.json({ status: true, msg: "Login Successfull", token: result.token });
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.json({ status: false, msg: "Something went wrong" });
   }
 }
@@ -57,7 +58,7 @@ async function forget(req, res) {
     const result = await service.forget(email);
     res.json(result);
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.json({ status: false, msg: "Something went wrong" });
   }
 }
@@ -67,7 +68,7 @@ async function resetTokenCheck(req, res) {
     const result = await service.checkResetToken(req.params.token);
     res.json(result);
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.json({ status: false, msg: "Something went wrong" });
   }
 }
@@ -77,7 +78,7 @@ async function reset(req, res) {
     const result = await service.reset(req.params.token, req.body.password);
     res.json(result);
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.json({ status: false, msg: "Something went wrong" });
   }
 }

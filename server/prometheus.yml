@@ -1,22 +1,44 @@
-global:
-  scrape_interval: 5s # Default scrape interval
-  evaluation_interval: 5s # Default evaluation interval
-
 scrape_configs:
-  - job_name: "instant"
-    metrics_path: "/metrics"
-    scheme: "https" # Use https for secure connections
+  - job_name: "backend"
+    scrape_interval: 15s
+    metrics_path: /metrics
     static_configs:
-      - targets:
-          - "panel2.logicpay.in"
-    tls_config:
-      insecure_skip_verify: true # Allow self-signed certificates (if applicable)
+      - targets: ["backend:9092"]
+        labels:
+          service: "instant-panel"
+          instance: "primary"
 
-alerting:
-  alertmanagers:
-    - static_configs:
-        - targets: []
+  - job_name: "rabbitmq"
+    scrape_interval: 15s
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["rabbitmq:15692"]
+        labels:
+          service: "rabbitmq"
 
-rule_files:
-  # You can specify alerting rules here if needed
-  # - "rules.yml"
+  - job_name: "mongodb"
+    scrape_interval: 15s
+    static_configs:
+      - targets: ["mongodb-exporter:9216"]
+        labels:
+          service: "mongodb"
+
+  - job_name: "redis"
+    scrape_interval: 15s
+    static_configs:
+      - targets: ["redis-exporter:9121"]
+        labels:
+          service: "redis"
+
+  - job_name: "prometheus"
+    scrape_interval: 15s
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "grafana"
+    scrape_interval: 15s
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["grafana:3000"]
+        labels:
+          service: "grafana"

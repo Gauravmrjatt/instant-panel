@@ -8,6 +8,7 @@ const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const promClient = require("prom-client");
 const responseTime = require("response-time");
+const logger = require("./lib/logger");
 
 const routes = require("./middlewares/routes");
 
@@ -17,6 +18,17 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+let inFlight = 0;
+const MAX_CONCURRENT = parseInt(process.env.MAX_CONCURRENT_REQUESTS, 10) || 500;
+app.use((req, res, next) => {
+  if (inFlight > MAX_CONCURRENT) {
+    return res.status(503).json({ status: false, msg: "Server busy, try again" });
+  }
+  inFlight++;
+  res.on("finish", () => inFlight--);
+  next();
+});
+
 app.use(cors({
   origin: process.env.CORS_ORIGIN,
   credentials: true,
@@ -25,6 +37,12 @@ app.use(cors({
 }));
 
 const collectDefaultMetrics = promClient.collectDefaultMetrics;
+
+new promClient.AggregatorRegistry();
+
+function normPath(p) {
+  return p.replace(/\/[a-f0-9]{24}/g, '/:id').replace(/\/\d+/g, '/:id');
+}
 
 const reqResTime = new promClient.Histogram({
   name: "http_express_req_res_time",
@@ -53,10 +71,25 @@ app.use((req, res, next) => {
 
 app.use(
   responseTime((req, res, time) => {
-    reqResTime.labels(req.method, req.path, res.statusCode).observe(time);
-    totalRequests.labels(req.method, req.path, res.statusCode).inc();
+    const p = normPath(req.path);
+    reqResTime.labels(req.method, p, res.statusCode).observe(time);
+    totalRequests.labels(req.method, p, res.statusCode).inc();
   }),
 );
+
+// app.use((req, res, next) => {
+//   const start = Date.now();
+//   res.on("finish", () => {
+//     logger.info({
+//       method: req.method,
+//       path: normPath(req.path),
+//       status: res.statusCode,
+//       duration: Date.now() - start,
+//       pid: process.pid,
+//     }, "request");
+//   });
+//   next();
+// });
 
 // Security
 app.use(helmet({ contentSecurityPolicy: false }));
@@ -65,7 +98,7 @@ app.use(helmet({ contentSecurityPolicy: false }));
 app.use(compression());
 
 // Rate limiting (disabled in test)
-if (process.env.NODE_ENV !== "test") {
+
   // const apiLimiter = rateLimit({
   //   windowMs: 60 * 1000,
   //   max: 100,
@@ -83,7 +116,7 @@ if (process.env.NODE_ENV !== "test") {
   });
 
   app.use("/auth/", authLimiter);
-}
+
 
 app.use("/", routes);
 

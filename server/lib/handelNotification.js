@@ -1,6 +1,7 @@
 const myDetails = require("../myDetails.json");
 const { Telegram } = require("telegraf");
 const telegram = new Telegram(myDetails.token);
+const logger = require("./logger");
 const Notification = (id, text) => {
   try {
     return telegram.sendMessage(id, text, {
@@ -8,7 +9,7 @@ const Notification = (id, text) => {
       disable_web_page_preview: true,
     });
   } catch (error) {
-    console.log("Notification  Error: ", error);
+    logger.error({ err: error }, "Notification error");
   }
 };
 function hideMiddleFourLetters(str) {

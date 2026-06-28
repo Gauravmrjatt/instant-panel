@@ -1,4 +1,5 @@
 const service = require("./service");
+const logger = require("../../lib/logger");
 
 async function getBilling(req, res) {
   try {
@@ -6,7 +7,7 @@ async function getBilling(req, res) {
     if (!result.status) return res.status(403).json(result);
     res.json(result);
   } catch (error) {
-    console.log("/get/billing >>> ", error);
+    logger.error({ err: error }, "/get/billing");
     res.json({ status: true, msg: "internal server error", error: error.message });
   }
 }

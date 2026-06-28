@@ -5,6 +5,7 @@ const Payment = require("../modules/payments/model");
 const Ban = require("../modules/ban/model");
 const Notification = require("../lib/handelNotification");
 const PendingPayment = require("../modules/payments/model").PendingPayment;
+const logger = require("./logger");
 const handelPayment = async (userId, eventData, lead, tg = "") => {
   try {
     function replaceAllPlaceholders(str, replacements) {
@@ -107,7 +108,7 @@ Refer response : ${JSON.stringify(responseRefer?.data)}
                 : "";
             Notification(tg.chatId, textMessage);
           } catch (error) {
-            console.log(error);
+            logger.error({ err: error }, "Manual payment notification error");
           }
         }
         const [payment, paymentReferSave] = await Promise.all([
@@ -217,7 +218,7 @@ Refer response : ${JSON.stringify(responseRefer?.data)}
               : "";
           Notification(tg.chatId, textMessage);
         } catch (error) {
-          console.log(error);
+          logger.error({ err: error }, "Manual payment notification error");
         }
       }
       const [payment, paymentReferSave] = await Promise.all([
@@ -249,7 +250,7 @@ Refer response : ${JSON.stringify(responseRefer?.data)}
       ),
     ]);
   } catch (error) {
-    console.log("Handle Manula Payment Error:", error);
+    logger.error({ err: error }, "Handle manual payment error");
     throw new Error("Payment handling failed");
   }
 };

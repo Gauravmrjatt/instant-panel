@@ -57,3 +57,28 @@ volumes:
   mongo-data:
   redis-data:
   rabbitmq-data:
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    hostname: rabbitmq
+
+    environment:
+      RABBITMQ_DEFAULT_USER: ${SERVICE_USER_RABBITMQ}
+      RABBITMQ_DEFAULT_PASS: ${SERVICE_PASSWORD_RABBITMQ}
+
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+      - "5552:5552"
+
+    command:
+      - sh
+      - -ec
+      - |
+        rabbitmq-plugins enable --offline rabbitmq_stream rabbitmq_stream_management
+        printf "stream.listeners.tcp.default = 5552\n" >/etc/rabbitmq/rabbitmq.conf
+        exec rabbitmq-server
+
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq/

@@ -1,8 +1,12 @@
 var details = require("../myDetails.json");
 var jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
+const { LRUCache } = require("lru-cache");
 const User = require("../modules/users/model");
 const redisClient = require("../lib/redisClient");
+const logger = require("../lib/logger");
+
+const authCache = new LRUCache({ max: 2000, ttl: 300_000 });
 
 const authValid = (req, res, next) => {
  
@@ -33,26 +37,35 @@ const authValid = (req, res, next) => {
 
 const authValidWithDb = async (req, res, next) => {
   try {
-    const cacheKey = `session:${req.user.loginToken}`;
-    const cached = await redisClient.get(cacheKey);
-    if (cached) {
-      const parsed = JSON.parse(cached);
+    const loginToken = req.user.loginToken;
+
+    const cachedUser = authCache.get(loginToken);
+    if (cachedUser) {
+      req.user.db = cachedUser;
+      return next();
+    }
+
+    const cacheKey = `session:${loginToken}`;
+    const redisCached = await redisClient.get(cacheKey);
+    if (redisCached) {
+      const parsed = JSON.parse(redisCached);
       if (parsed._id) parsed._id = new mongoose.Types.ObjectId(parsed._id);
+      authCache.set(loginToken, parsed);
       req.user.db = parsed;
       return next();
     }
 
-    const UserDbData = await User.findOne({ loginToken: req.user.loginToken }).lean();
+    const UserDbData = await User.findOne({ loginToken }).lean();
     if (!UserDbData) {
       return res.status(401).json({ status: false, msg: "Session expired", redirect: "/logout" });
     }
 
+    authCache.set(loginToken, UserDbData);
     await redisClient.setEx(cacheKey, 900, JSON.stringify(UserDbData));
     req.user.db = UserDbData;
     return next();
   } catch (err) {
-    console.error("Auth cache error:", err);
-    // Fallback to DB query without cache
+    logger.error({ err }, "Auth cache error");
     const UserDbData = await User.findOne({ loginToken: req.user.loginToken }).lean();
     if (!UserDbData) {
       return res.status(401).json({ status: false, msg: "Session expired", redirect: "/logout" });

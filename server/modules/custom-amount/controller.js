@@ -2,6 +2,8 @@ const service = require("./service");
 const User = require("../users/model");
 const Campaign = require("../campaigns/model");
 const CustomAmount = require("./model");
+const redisClient = require("../../lib/redisClient");
+const logger = require("../../lib/logger");
 
 async function create(req, res) {
   try {
@@ -9,7 +11,7 @@ async function create(req, res) {
     const result = await service.createCustomAmount(userDetails._id, userDetails.userId, req.body);
     res.json(result);
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.json({ status: false, msg: "Something went wrong", error });
   }
 }
@@ -19,7 +21,7 @@ async function list(req, res) {
     const result = await service.getCustomAmounts(req.user.db._id);
     res.json(result);
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.json({ status: false, msg: "Something went wrong", error });
   }
 }
@@ -39,7 +41,7 @@ async function remove(req, res) {
     const result = await service.deleteCustomAmount(itemId);
     res.json(result);
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.json({ status: false, msg: "Something went wrong", error });
   }
 }
@@ -58,9 +60,10 @@ async function upsertByApiKey(req, res) {
       { userId: isUser._id, user: isUser.userId, ...body, campId: isCamp._id },
       { new: true, upsert: true }
     );
+    redisClient.del(`customAmount:${isCamp._id}:${body.event}:${body.number.trim().toLowerCase()}`).catch(() => {});
     res.json({ status: true, msg: updated.isNew ? "Custom details added successfully" : "Custom details updated successfully", id: updated._id });
   } catch (error) {
-    console.error("Error:", error.message);
+    logger.error({ err: error }, "Error in upsertByApiKey");
     res.status(500).json({ status: false, msg: "Internal server error", error: error.message });
   }
 }

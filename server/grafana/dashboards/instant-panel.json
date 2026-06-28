@@ -1,0 +1,128 @@
+{
+  "title": "Instant Panel",
+  "uid": "instant-panel",
+  "version": 2,
+  "timezone": "browser",
+  "editable": true,
+  "panels": [
+    {
+      "title": "HTTP Request Rate",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(http_requests_total[1m])",
+          "legendFormat": "{{method}} {{path}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Request Duration (p50/p95/p99)",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, rate(http_express_req_res_time_bucket[1m]))", "legendFormat": "p50", "refId": "A" },
+        { "expr": "histogram_quantile(0.95, rate(http_express_req_res_time_bucket[1m]))", "legendFormat": "p95", "refId": "B" },
+        { "expr": "histogram_quantile(0.99, rate(http_express_req_res_time_bucket[1m]))", "legendFormat": "p99", "refId": "C" }
+      ]
+    },
+    {
+      "title": "Active Connections",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 8 },
+      "targets": [
+        { "expr": "http_active_connections", "legendFormat": "active", "refId": "A" }
+      ]
+    },
+    {
+      "title": "CPU Usage",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 6, "x": 6, "y": 8 },
+      "targets": [
+        { "expr": "rate(process_cpu_seconds_total[1m])", "legendFormat": "CPU", "refId": "A" }
+      ]
+    },
+    {
+      "title": "Memory Usage",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 6, "x": 12, "y": 8 },
+      "targets": [
+        { "expr": "nodejs_heap_size_used_bytes", "legendFormat": "heap used", "refId": "A" },
+        { "expr": "nodejs_heap_size_total_bytes", "legendFormat": "heap total", "refId": "B" }
+      ]
+    },
+    {
+      "title": "Event Loop Lag",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 6, "x": 18, "y": 8 },
+      "targets": [
+        { "expr": "nodejs_eventloop_lag_seconds", "legendFormat": "lag", "refId": "A" }
+      ]
+    },
+    {
+      "title": "RabbitMQ — Queues",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        { "expr": "rabbitmq_queue_messages_ready", "legendFormat": "{{queue}} ready", "refId": "A" },
+        { "expr": "rabbitmq_queue_messages_unacked", "legendFormat": "{{queue}} unacked", "refId": "B" }
+      ]
+    },
+    {
+      "title": "RabbitMQ — Publish Rate",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        { "expr": "rate(rabbitmq_channel_messages_published_total[1m])", "legendFormat": "publish rate", "refId": "A" },
+        { "expr": "rate(rabbitmq_channel_messages_delivered_total[1m])", "legendFormat": "deliver rate", "refId": "B" }
+      ]
+    },
+    {
+      "title": "MongoDB — Connections",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 24 },
+      "targets": [
+        { "expr": "mongodb_connections_current", "legendFormat": "current", "refId": "A" },
+        { "expr": "mongodb_connections_available", "legendFormat": "available", "refId": "B" }
+      ]
+    },
+    {
+      "title": "Redis — Connected Clients",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 24 },
+      "targets": [
+        { "expr": "redis_connected_clients", "legendFormat": "clients", "refId": "A" }
+      ]
+    },
+    {
+      "title": "Redis — Memory",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 24 },
+      "targets": [
+        { "expr": "redis_memory_used_bytes", "legendFormat": "used", "refId": "A" },
+        { "expr": "redis_memory_max_bytes", "legendFormat": "max", "refId": "B" }
+      ]
+    },
+    {
+      "title": "Recent Logs",
+      "type": "logs",
+      "datasource": "Loki",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 32 },
+      "targets": [
+        { "expr": "{service=\"instant-panel\"}", "refId": "A" }
+      ]
+    }
+  ]
+}

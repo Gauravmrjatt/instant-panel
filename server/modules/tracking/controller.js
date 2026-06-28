@@ -1,4 +1,5 @@
 const service = require("./service");
+const logger = require("../../lib/logger");
 
 async function track(req, res) {
   try {
@@ -14,9 +15,9 @@ async function track(req, res) {
 
     const click = await service.processClick(campInfo, aff_click_id, sub_aff_id, userIp, device, req);
 
-    res.status(200).json({ status: true, url: campInfo.tracking.replace(/{click_id}/g, click), msg: "Redirect to the given URL.." });
+    res.status(202).json({ status: true, url: campInfo.tracking.replace(/{click_id}/g, click), msg: "Redirect to the given URL.." });
   } catch (error) {
-    console.error("Error in tracking:", error);
+    logger.error({ err: error }, "Error in tracking");
     res.status(500).json({ status: false, msg: "Something went wrong", error });
   }
 }

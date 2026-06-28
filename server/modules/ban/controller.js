@@ -1,11 +1,12 @@
 const service = require("./service");
+const logger = require("../../lib/logger");
 
 async function getBanned(req, res) {
   try {
     const result = await service.getBannedNumbers(req.user.db._id);
     res.json(result);
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.json({ status: false, msg: "Something went wrong", error });
   }
 }
@@ -16,7 +17,7 @@ async function banNumber(req, res) {
     const result = await service.banNumber(userDetails._id, userDetails.userId, req.body.number);
     res.json(result);
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.json({ status: false, msg: "Something went wrong", error });
   }
 }
@@ -37,7 +38,7 @@ async function unban(req, res) {
     const result = await service.unbanBatch(userDetails._id, ids);
     res.json(result);
   } catch (error) {
-    console.log(error);
+    logger.error({ err: error });
     res.json({ status: false, msg: "Something went wrong", error });
   }
 }

@@ -1,6 +1,7 @@
 const { connectToRabbitMQ, createQueue, getChannel, channelEmitter } = require("../../lib/rabbitMQ");
 const Lead = require("../../modules/leads/model");
 const redisClient = require("../../lib/redisClient");
+const logger = require("../../lib/logger");
 
 const QUEUE = "lead_write";
 const BATCH_SIZE = 200;
@@ -22,11 +23,11 @@ async function flushLeads() {
     const userIds = [...new Set(leadDocs.map(l => l.userId?.toString()).filter(Boolean))];
     await Promise.all(userIds.map(id => redisClient.del(`dashboard:${id}`).catch(() => {})));
     messages.forEach((msg) => channel.ack(msg));
-    console.log(`LeadWorker >> Flushed ${batch.length} leads`);
+    logger.info({ count: batch.length }, "LeadWorker >> Flushed leads");
   } catch (err) {
     if (err.code === 11000) {
       messages.forEach((msg) => channel.ack(msg));
-      console.log(`LeadWorker >> Flushed ${batch.length} leads (${err.writeErrors?.length || 0} duplicates skipped)`);
+      logger.info({ count: batch.length, duplicates: err.writeErrors?.length || 0 }, "LeadWorker >> Flushed leads (duplicates skipped)");
     } else {
       messages.forEach((msg) => channel.nack(msg, false, true));
     }
@@ -46,14 +47,14 @@ async function setupConsumer() {
         await flushLeads();
       }
     } catch (err) {
-      console.error("LeadWorker >> Parse error:", err.message);
+      logger.error({ err: err.message }, "LeadWorker >> Parse error");
       channel.nack(msg, false, true);
     }
   };
   const result = await channel.consume(QUEUE, handler, { noAck: false });
   consumerTag = result.consumerTag;
   consumerActive = true;
-  console.log("LeadWorker >> Consumer registered");
+  logger.info("LeadWorker >> Consumer registered");
 }
 
 async function startLeadWorker() {
@@ -65,10 +66,12 @@ async function startLeadWorker() {
 
   channelEmitter.on("reconnected", async () => {
     consumerActive = false;
-    await setupConsumer();
+    try { await setupConsumer(); } catch (err) {
+      logger.error({ err: err.message }, "LeadWorker >> Failed to re-setup consumer on reconnect");
+    }
   });
 
-  console.log("LeadWorker >> Started (buffer: 200/200ms)");
+  logger.info("LeadWorker >> Started");
 }
 
 async function stopLeadWorker() {

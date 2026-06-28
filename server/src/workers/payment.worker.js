@@ -1,80 +1,41 @@
 const {
-  connectToRabbitMQ,
-  consumeMessages,
   createQueue,
+  consumeMessages,
 } = require("../../lib/rabbitMQ");
-const mongoose = require("mongoose");
-const PendingPayment = require("../../modules/payments/model").PendingPayment;
-const Leads = require("../../modules/leads/model");
-const handelPayment = require("../../lib/handelPayments");
+const handlePayment = require("../../lib/handlePostBackPayments");
+const { incrementCapCounters } = require("../../modules/postback/service");
+const Lead = require("../../modules/leads/model");
+const logger = require("../../lib/logger");
 
 const QUEUE_NAME = "payment_processing";
 
-(async () => {
+async function startPaymentWorker() {
   try {
-    await connectToRabbitMQ();
-    console.log("Worker connected to RabbitMQ.");
     await createQueue(QUEUE_NAME);
     await consumeMessages(QUEUE_NAME, async (taskString) => {
       const task = JSON.parse(taskString);
-      const { userId, value, totalAmount, comment, clicks, campId } = task;
+      if (task.type !== "postback_payment") return;
 
-      const payment = await handelPayment(
-        userId,
-        value,
-        totalAmount,
-        comment
-      );
-      console.log(payment);
-      const status = payment.status;
-      const payMessage =
-        payment.statusMessage ||
-        payment.message ||
-        payment.msg ||
-        "no message found";
+      const { userId, eventData, lead, tg, camp, dailyApprovedLeads, totalApprovedLeads, clicktoconv } = task;
 
-      await Promise.all([
-        PendingPayment.updateMany(
-          {
-            userId: new mongoose.Types.ObjectId(userId),
-            status: { $in: ["PENDING", "ACCEPTED"] },
-            type: "refer",
-            paymentStatus: { $nin: ["ACCEPTED"] },
-            campId: new mongoose.Types.ObjectId(campId),
-            clickId: { $in: clicks },
-          },
-          {
-            status: "ACCEPTED",
-            paymentStatus: status,
-            payMessage,
-            message:
-              "We have processed your request; please check payment status",
-            response: payment,
-          }
-        ),
-        Leads.updateMany(
-          {
-            userId: new mongoose.Types.ObjectId(userId),
-            status: "Approved",
-            referPaymentStatus: "PENDING",
-            campId: new mongoose.Types.ObjectId(campId),
-            clickId: { $in: clicks },
-          },
-          {
-            referPaymentStatus: status,
-            referPayMessage: payMessage,
-          }
-        ),
-      ]);
+      try {
+        await handlePayment(userId, eventData, lead, tg, camp, dailyApprovedLeads, totalApprovedLeads, clicktoconv);
+      } catch (err) {
+        if (err.code === 11000) {
+          logger.warn({ clickId: lead.clickId, event: lead.event }, "PaymentWorker >> Duplicate key — already processed, acking");
+          return;
+        }
+        throw err;
+      }
 
-      console.log(
-        `PayentWorker >> Processed task for userId: ${value}, totalAmount: ${totalAmount}`
-      );
+      await incrementCapCounters(camp._id || camp._id, lead.event);
+
+      logger.info({ click: lead.click, event: lead.event }, "PaymentWorker >> Processed postback payment");
     });
+    logger.info("PaymentWorker >> Started");
   } catch (error) {
-    console.error(
-      "PayentWorker >> Worker failed to connect to RabbitMQ:",
-      error
-    );
+    logger.error({ err: error }, "PaymentWorker >> Failed to start");
   }
-})();
+}
+
+module.exports = { startPaymentWorker };
