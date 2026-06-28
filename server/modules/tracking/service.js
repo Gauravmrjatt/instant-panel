@@ -28,18 +28,26 @@ async function getCampaign(campId) {
   const local = campaignCache.get(campId);
   if (local) return local;
 
-  const cached = await redisClient.get(`campaign:${campId}`);
-  if (cached) {
-    const parsed = JSON.parse(cached);
-    campaignCache.set(campId, parsed);
-    return parsed;
+  try {
+    const cached = await redisClient.get(`campaign:${campId}`);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      campaignCache.set(campId, parsed);
+      return parsed;
+    }
+  } catch {
+    logger.warn("Redis unavailable — falling back to MongoDB for campaign lookup");
   }
 
   const campInfo = await Campaign.findOne({ _id: campId }).select("userId tracking").exec();
   if (campInfo) {
     const obj = campInfo.toObject();
     campaignCache.set(campId, obj);
-    await redisClient.setEx(`campaign:${campId}`, 3600, JSON.stringify(obj));
+    try {
+      await redisClient.setEx(`campaign:${campId}`, 3600, JSON.stringify(obj));
+    } catch {
+      logger.warn("Redis unavailable — skipping campaign cache set");
+    }
   }
   return campInfo;
 }
