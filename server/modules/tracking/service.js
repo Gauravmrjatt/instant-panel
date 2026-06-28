@@ -40,8 +40,8 @@ async function getCampaign(campId) {
 
 // ── In-process batch click buffer ──────────────────────────
 const clickBuffer = [];
-const BATCH_MAX = 500;
-const BATCH_INTERVAL = 200;
+const BATCH_MAX = 2000;
+const BATCH_INTERVAL = 500;
 let flushTimer = null;
 
 function flushClicks() {

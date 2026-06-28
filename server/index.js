@@ -84,7 +84,7 @@ if (cluster.isPrimary) {
 
   mongoose
     .connect(process.env.DB_URL, {
-      maxPoolSize: Math.ceil(50 / NUM_HTTP_WORKERS),
+      maxPoolSize: Math.ceil(200 / NUM_HTTP_WORKERS),
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
     })
