@@ -75,4 +75,10 @@ const authValidWithDb = async (req, res, next) => {
   }
 };
 
-module.exports = { authValid, authValidWithDb };
+async function clearAuthCache(loginToken) {
+  if (!loginToken) return;
+  authCache.delete(loginToken);
+  await redisClient.del(`session:${loginToken}`).catch(() => {});
+}
+
+module.exports = { authValid, authValidWithDb, clearAuthCache };

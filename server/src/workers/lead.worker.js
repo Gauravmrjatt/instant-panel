@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const { connectToRabbitMQ, createQueue, getChannel, channelEmitter } = require("../../lib/rabbitMQ");
 const Lead = require("../../modules/leads/model");
 const redisClient = require("../../lib/redisClient");
@@ -42,6 +43,9 @@ async function setupConsumer() {
     if (!msg) return;
     try {
       const leadData = JSON.parse(msg.content.toString());
+      if (typeof leadData.userId === "string") leadData.userId = new mongoose.Types.ObjectId(leadData.userId);
+      if (typeof leadData.campId === "string") leadData.campId = new mongoose.Types.ObjectId(leadData.campId);
+      if (typeof leadData.clickId === "string") leadData.clickId = new mongoose.Types.ObjectId(leadData.clickId);
       buffer.push({ data: leadData, msg });
       if (buffer.length >= BATCH_SIZE) {
         await flushLeads();

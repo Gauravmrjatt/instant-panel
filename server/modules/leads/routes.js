@@ -13,5 +13,7 @@ router.get("/api/v1/campaigns/:campId/leads/export", authValid, authValidWithDb,
 router.patch("/api/v1/leads/:id/status", authValid, authValidWithDb, ctrl.updateStatus);
 router.post("/api/v1/leads/:id/approve", authValid, authValidWithDb, ctrl.approve);
 router.post("/api/v1/leads/batch-delete", authValid, authValidWithDb, ctrl.remove);
+router.post("/api/v1/leads/batch-status", authValid, authValidWithDb, ctrl.batchUpdateStatus);
+router.post("/api/v1/leads/batch-approve", authValid, authValidWithDb, ctrl.batchApprove);
 
 module.exports = router;

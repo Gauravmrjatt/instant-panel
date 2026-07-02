@@ -2,6 +2,7 @@ const service = require("./service");
 const { sendToQueue } = require("../../lib/rabbitMQ");
 const redisClient = require("../../lib/redisClient");
 const logger = require("../../lib/logger");
+const { clearAuthCache } = require("../../middlewares/auth");
 
 async function getConfig(req, res) {
   try {
@@ -16,10 +17,13 @@ async function getConfig(req, res) {
 async function toggleGlobal(req, res) {
   try {
     const oldToken = req.user.db.PostbackToken;
-    const result = await service.toggleGlobalPostback(req.user.loginToken);
+    const enabled = req.body?.enabled;
+    const result = await service.toggleGlobalPostback(req.user.loginToken, enabled);
     service.clearUserCache(oldToken);
+    await clearAuthCache(req.user.loginToken);
     res.json(result);
   } catch (error) {
+    logger.error({ err: error }, "toggleGlobal error");
     res.json({ status: false, msg: "Error in updating postback key" });
   }
 }
@@ -44,6 +48,11 @@ async function handleGlobalPostback(req, res) {
 
     if (!PostbackToken || !click) return res.json({ status: false, msg: "PostbackToken and click are required" });
     if (!event) return res.json({ status: false, msg: "Event is required" });
+
+    const user = await service.resolvePostbackUser(PostbackToken);
+    if (!user || !user.globalPostBack) {
+      return res.json({ status: false, msg: "Global postback is disabled" });
+    }
 
     publishToQueue("global", { PostbackToken, event, click, ip, query: req.query });
     return res.status(202).json({ status: true, msg: "Postback accepted for processing" });
@@ -88,6 +97,9 @@ async function processPostbackSync(type, payload) {
     if (!user) return;
     const clickDoc = await service.resolvePostbackClick(payload.click, user._id);
     if (!clickDoc) return;
+    const camp = await service.resolveCampaignById(clickDoc.campId);
+    if (!camp) return;
+    clickDoc.campId = camp;
     const result = await service.processPostback({ user, clickDoc, event: payload.event, ip: payload.ip, query: payload.query });
     logger.warn({ click: payload.click, type, ms: Date.now() - t0 }, "Sync fallback — global postback completed");
     return;
@@ -96,9 +108,8 @@ async function processPostbackSync(type, payload) {
     if (!camp || !user) return;
     const clickDoc = await service.resolvePostbackClick(payload.click, user._id);
     if (!clickDoc) return;
-    const campId = camp._id?.toString?.() || camp._id;
-    const clickCampId = clickDoc.campId._id?.toString?.() || clickDoc.campId._id;
-    if (clickCampId !== campId) return;
+    if (String(clickDoc.campId) !== String(camp._id)) return;
+    clickDoc.campId = camp;
     const result = await service.processPostback({ user, clickDoc, event: payload.event, ip: payload.ip, query: payload.query });
     logger.warn({ click: payload.click, type, ms: Date.now() - t0 }, "Sync fallback — campaign postback completed");
     return;

@@ -21,10 +21,13 @@ async function getPostbackConfig(user, protocol, host) {
   return { status: true, msg: "Postback key found!", key: PostbackToken, isEnabled: globalPostBack, url: `${domain}/api/v1/postback/${PostbackToken}/{eventname}?click={click_id}&p1={pass extra params}` };
 }
 
-async function toggleGlobalPostback(loginToken) {
+async function toggleGlobalPostback(loginToken, enabled) {
+  const updateOp = enabled !== undefined
+    ? { $set: { globalPostBack: enabled } }
+    : [{ $set: { globalPostBack: { $not: "$globalPostBack" } } }];
   const updatedUser = await User.findOneAndUpdate(
     { loginToken },
-    [{ $set: { globalPostBack: { $not: "$globalPostBack" } } }],
+    updateOp,
     { new: true }
   );
   if (!updatedUser) return { status: false, msg: "Error in updating postback key" };
@@ -105,12 +108,50 @@ async function resolvePostbackClick(click, userId) {
   let clickId = await redisClient.get(cacheKey);
   if (clickId) return JSON.parse(clickId);
 
+  const selectFields = "_id userId campId click user refer ip createdAt number";
+
   clickId = await Click.findOne({ click, userId })
-    .select("_id userId campId click user refer ip createdAt number")
-      .populate("campId", "campStatus events delay ips same ip paytm prevEvent name postbackToken referPending userPending offerID")
+    .select(selectFields)
     .lean();
+
+  // Fallback: query with string userId for existing dirty data (stored as string by native driver)
+  if (!clickId) {
+    const raw = await Click.collection.findOne({ click, userId: String(userId) });
+    if (raw) {
+      clickId = await Click.findOne({ _id: raw._id })
+        .select(selectFields)
+        .lean();
+    }
+  }
+
   if (clickId) await redisClient.setEx(cacheKey, 86400, JSON.stringify(clickId));
   return clickId;
+}
+
+const campaignByIdCache = new LRUCache({ max: 5000, ttl: 60_000 });
+const campSelectFields = "campStatus events delay ips same ip paytm prevEvent name postbackToken referPending userPending offerID";
+
+async function resolveCampaignById(campId) {
+  const key = String(campId);
+  const cached = campaignByIdCache.get(key);
+  if (cached) return cached;
+
+  try {
+    const redisKey = `postbackCampById:${key}`;
+    const cachedStr = await redisClient.get(redisKey);
+    if (cachedStr) {
+      const parsed = JSON.parse(cachedStr);
+      campaignByIdCache.set(key, parsed);
+      return parsed;
+    }
+  } catch {}
+
+  const camp = await Campaign.findById(campId).select(campSelectFields).lean();
+  if (camp) {
+    campaignByIdCache.set(key, camp);
+    try { await redisClient.setEx(`postbackCampById:${key}`, 3600, JSON.stringify(camp)); } catch {}
+  }
+  return camp;
 }
 
 async function resolveCustomAmount(campId, eventName, refer) {
@@ -229,7 +270,15 @@ async function incrementCapCounters(campId, event) {
 async function processPostback({ user, clickDoc, event, ip, query }) {
   const camp = clickDoc.campId;
 
-  if (camp.campStatus === false) return { status: false, msg: "Campaign has Paused" };
+  if (!user.globalPostBack){
+    logger.warn({ clickId: clickDoc._id, event, userId: user._id }, "processPostback >> Global postback is disabled");
+    return { status: false, msg: "Global postback is disabled" };}
+
+  if (camp.campStatus === false){
+    logger.warn({ clickId: clickDoc._id, event, userId: user._id }, "processPostback >> Campaign has Paused");
+    return { status: false, msg: "Campaign has Paused" };}
+
+
 
   const isDuplicate = await checkLeadDuplicates(clickDoc._id, event);
   if (isDuplicate) return { status: false, msg: "Click id has already Registered" };
@@ -392,6 +441,7 @@ module.exports = {
   resolvePostbackUser,
   resolveCampaignPostback,
   resolvePostbackClick,
+  resolveCampaignById,
   resolveCustomAmount,
   checkLeadDuplicates,
   checkBans,

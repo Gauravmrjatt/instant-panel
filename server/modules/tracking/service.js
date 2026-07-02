@@ -74,7 +74,9 @@ async function processClick(campInfo, aff_click_id, sub_aff_id, userIp, deviceQu
   const ip = userIp || requestIp.getClientIp(req);
 
   const clickDoc = {
-    userId: campInfo.userId, campId: campInfo._id, click, user: aff_click_id.trim().toLowerCase(),
+    userId: typeof campInfo.userId === "string" ? new mongoose.Types.ObjectId(campInfo.userId) : campInfo.userId,
+    campId: typeof campInfo._id === "string" ? new mongoose.Types.ObjectId(campInfo._id) : campInfo._id,
+    click, user: aff_click_id.trim().toLowerCase(),
     refer: sub_aff_id.trim().toLowerCase(), ip, device: {}, number: req.query.number, params: req.query,
   };
 

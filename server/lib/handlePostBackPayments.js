@@ -1,5 +1,5 @@
 const GetwaySettings = require("../modules/gateway-settings/model");
-const saveLead = require("../lib/saveLead");
+const { sendToQueue } = require("./rabbitMQ");
 const axios = require("axios");
 const Payment = require("../modules/payments/model");
 const { Notification, hideMiddleFourLetters } = require("./handelNotification");
@@ -208,15 +208,30 @@ const handlePayment = async (
 
     sendNotification(tg, notificationMessage).catch(() => {});
 
-    await saveLead({
-      ...lead,
-      status: STATUS,
-      message: "Lead processed successfully.",
-      payMessage: PAYMESSAGE,
-      paymentStatus: PAYSTATUS,
-      referPaymentStatus: PAYSTATUSREFER,
-      referPayMessage: PAYMESSAGEREFER,
-    });
+    try {
+      sendToQueue("lead_write", JSON.stringify({
+        ...lead,
+        status: STATUS,
+        message: "Lead processed successfully.",
+        payMessage: PAYMESSAGE,
+        paymentStatus: PAYSTATUS,
+        referPaymentStatus: PAYSTATUSREFER,
+        referPayMessage: PAYMESSAGEREFER,
+      }));
+    } catch (err) {
+      logger.warn({ err: err.message }, "lead_write queue unavailable — saving lead directly");
+      const Lead = require("../modules/leads/model");
+      await new Lead({
+        ...lead,
+        status: STATUS,
+        message: "Lead processed successfully.",
+        payMessage: PAYMESSAGE,
+        paymentStatus: PAYSTATUS,
+        referPaymentStatus: PAYSTATUSREFER,
+        referPayMessage: PAYMESSAGEREFER,
+      }).save();
+    }
+    
   } catch (error) {
     logger.error({ err: error }, "Error in handlePayment");
     throw new Error("Payment handling failed");

@@ -59,10 +59,38 @@ async function approveLead(userId, ID, leadStatus, tg) {
   return { status: true, msg: "Status Updated Successfully!" };
 }
 
+async function batchUpdateStatus(userId, ids, status) {
+  if (!ids || !Array.isArray(ids) || ids.length === 0) return { status: false, msg: "Please provide valid lead IDs" };
+  if (!status) return { status: false, msg: "Status is required" };
+  const valid = ["Approved", "Pending", "Rejected"];
+  if (!valid.includes(status)) return { status: false, msg: "Invalid status value" };
+  const result = await Leads.updateMany({ _id: { $in: ids }, userId }, { $set: { status } });
+  return { status: true, msg: `${result.modifiedCount} lead(s) updated to ${status}` };
+}
+
+async function batchApproveLeads(userId, ids, payment, tg) {
+  if (!ids || !Array.isArray(ids) || ids.length === 0) return { status: false, msg: "Please provide valid lead IDs" };
+  if (!payment) {
+    return batchUpdateStatus(userId, ids, "Approved");
+  }
+  let successCount = 0;
+  let failCount = 0;
+  for (const id of ids) {
+    try {
+      const result = await approveLead(userId, id, "Approved", tg);
+      if (result.status) successCount++;
+      else failCount++;
+    } catch {
+      failCount++;
+    }
+  }
+  return { status: true, msg: `${successCount} lead(s) approved with payment, ${failCount} failed` };
+}
+
 async function deleteLeads(userId, selection) {
   if (!selection || !Array.isArray(selection)) return { status: false, msg: "Please provide valid lead IDs" };
   await Leads.deleteMany({ _id: { $in: selection }, userId });
   return { status: true, msg: "Leads deleted successfully" };
 }
 
-module.exports = { getLeads, exportLeads, updateLeadStatus, approveLead, deleteLeads };
+module.exports = { getLeads, exportLeads, updateLeadStatus, approveLead, batchUpdateStatus, batchApproveLeads, deleteLeads };

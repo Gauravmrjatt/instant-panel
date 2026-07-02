@@ -49,6 +49,30 @@ async function approve(req, res) {
   }
 }
 
+async function batchUpdateStatus(req, res) {
+  try {
+    const userDetails = req.user.db;
+    const { ids, status } = req.body;
+    const result = await service.batchUpdateStatus(userDetails._id, ids, status);
+    res.json(result);
+  } catch (error) {
+    logger.error({ err: error });
+    res.json({ status: false, msg: "Something went wrong", error });
+  }
+}
+
+async function batchApprove(req, res) {
+  try {
+    const userDetails = req.user.db;
+    const { ids, payment } = req.body;
+    const result = await service.batchApproveLeads(userDetails._id, ids, payment, userDetails.tgId);
+    res.json(result);
+  } catch (error) {
+    logger.error({ err: error });
+    res.json({ status: false, msg: "Something went wrong", error });
+  }
+}
+
 async function remove(req, res) {
   try {
     const result = await service.deleteLeads(req.user.db._id, req.body.selection);
@@ -59,4 +83,4 @@ async function remove(req, res) {
   }
 }
 
-module.exports = { list, exportLeads, updateStatus, approve, remove };
+module.exports = { list, exportLeads, updateStatus, approve, batchUpdateStatus, batchApprove, remove };

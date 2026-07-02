@@ -73,9 +73,25 @@ interface UpdateLeadsPayload {
 }
 
 export async function updateLeads(payload: UpdateLeadsPayload): Promise<Response> {
-  return authFetch(`${apiConfig.baseUrl}/update/leads`, {
+  return authFetch(`${apiConfig.baseUrl}/api/v1/leads/batch-status`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
+  })
+}
+
+export async function batchApproveLeads(payload: { ids: string[]; payment: boolean }): Promise<Response> {
+  return authFetch(`${apiConfig.baseUrl}/api/v1/leads/batch-approve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteLeads(ids: string[]): Promise<Response> {
+  return authFetch(`${apiConfig.baseUrl}/api/v1/leads/batch-delete`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ selection: ids }),
   })
 }

@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   ColumnDef,
   flexRender,
@@ -40,6 +41,14 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
   MoreHorizontal,
   Eye,
   ArrowUpDown,
@@ -47,8 +56,15 @@ import {
   RefreshCcw,
   Download,
   Info,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  Trash2,
+  Loader2,
 } from 'lucide-react'
 import type { LeadData } from '@/hooks/useLeads'
+import { updateLeads, deleteLeads, batchApproveLeads } from '@/hooks/useLeads'
+import { toast } from 'sonner'
 
 interface LeadsTableProps {
   data: LeadData[]
@@ -94,12 +110,19 @@ export function LeadsTable({
   onPaginationChange,
 }: LeadsTableProps) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<{ id: string; value: unknown }[]>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = useState({})
   const [internalFilter, setInternalFilter] = useState('')
-  
+  const [bulkLoading, setBulkLoading] = useState(false)
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false)
+  const [approveWithPayment, setApproveWithPayment] = useState(true)
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+  const [confirmAction, setConfirmAction] = useState<{ label: string; status: string } | null>(null)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+
   useEffect(() => {
     setInternalFilter(searchQuery)
   }, [searchQuery])
@@ -405,7 +428,78 @@ export function LeadsTable({
         click: false,
       },
     },
+    getRowId: (row) => row.id,
   })
+
+  const selectedIds = table.getSelectedRowModel().rows.map((r) => r.original.id)
+  const selectedCount = selectedIds.length
+  const hasSelection = selectedCount > 0
+
+  const handleBulkStatus = useCallback(async (status: string) => {
+    const ids = table.getSelectedRowModel().rows.map((r) => r.original.id)
+    if (ids.length === 0) return
+    setBulkLoading(true)
+    setConfirmDialogOpen(false)
+    try {
+      const res = await updateLeads({ ids, status })
+      const data = await res.json()
+      if (data.status) {
+        toast.success(data.msg || `Updated to ${status}`)
+        queryClient.invalidateQueries({ queryKey: ['leads'] })
+        setRowSelection({})
+      } else {
+        toast.error(data.msg || 'Failed to update leads')
+      }
+    } catch {
+      toast.error('Failed to update leads')
+    } finally {
+      setBulkLoading(false)
+    }
+  }, [queryClient])
+
+  const handleBulkApprove = useCallback(async () => {
+    const ids = table.getSelectedRowModel().rows.map((r) => r.original.id)
+    if (ids.length === 0) return
+    setBulkLoading(true)
+    setApproveDialogOpen(false)
+    try {
+      const res = await batchApproveLeads({ ids, payment: approveWithPayment })
+      const data = await res.json()
+      if (data.status) {
+        toast.success(data.msg || 'Leads approved')
+        queryClient.invalidateQueries({ queryKey: ['leads'] })
+        setRowSelection({})
+      } else {
+        toast.error(data.msg || 'Failed to approve leads')
+      }
+    } catch {
+      toast.error('Failed to approve leads')
+    } finally {
+      setBulkLoading(false)
+    }
+  }, [queryClient, approveWithPayment])
+
+  const handleBulkDelete = useCallback(async () => {
+    const ids = table.getSelectedRowModel().rows.map((r) => r.original.id)
+    if (ids.length === 0) return
+    setBulkLoading(true)
+    setDeleteConfirmOpen(false)
+    try {
+      const res = await deleteLeads(ids)
+      const data = await res.json()
+      if (data.status) {
+        toast.success(data.msg || 'Leads deleted')
+        queryClient.invalidateQueries({ queryKey: ['leads'] })
+        setRowSelection({})
+      } else {
+        toast.error(data.msg || 'Failed to delete leads')
+      }
+    } catch {
+      toast.error('Failed to delete leads')
+    } finally {
+      setBulkLoading(false)
+    }
+  }, [queryClient])
 
   if (isLoading) {
     return (
@@ -431,6 +525,140 @@ export function LeadsTable({
 
   return (
     <div className="space-y-4">
+      {/* Bulk action toolbar */}
+      {hasSelection && (
+        <div className="flex items-center gap-2 px-4 py-2 rounded-lg border bg-muted/30">
+          <span className="text-sm font-medium mr-2">{selectedCount} selected</span>
+          <Button
+            size="sm"
+            className="gap-1.5 bg-emerald-600 hover:bg-emerald-700"
+            onClick={() => { setApproveWithPayment(true); setApproveDialogOpen(true) }}
+            disabled={bulkLoading}
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Approve
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="gap-1.5"
+            onClick={() => { setConfirmAction({ label: 'Pending', status: 'Pending' }); setConfirmDialogOpen(true) }}
+            disabled={bulkLoading}
+          >
+            <Clock className="h-3.5 w-3.5" />
+            Pending
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="gap-1.5 text-red-600 hover:text-red-600"
+            onClick={() => { setConfirmAction({ label: 'Rejected', status: 'Rejected' }); setConfirmDialogOpen(true) }}
+            disabled={bulkLoading}
+          >
+            <XCircle className="h-3.5 w-3.5" />
+            Reject
+          </Button>
+          <div className="ml-auto">
+            <Button
+              size="sm"
+              variant="destructive"
+              className="gap-1.5"
+              onClick={() => setDeleteConfirmOpen(true)}
+              disabled={bulkLoading}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Delete
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Approve dialog with payment checkbox */}
+      <Dialog open={approveDialogOpen} onOpenChange={setApproveDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Approve Leads</DialogTitle>
+            <DialogDescription>
+              Confirm approval for {selectedCount} selected lead(s).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-3 py-4">
+            <Checkbox
+              id="approve-payment"
+              checked={approveWithPayment}
+              onCheckedChange={(v) => setApproveWithPayment(!!v)}
+            />
+            <label htmlFor="approve-payment" className="text-sm font-medium cursor-pointer">
+              Also process payment
+            </label>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setApproveDialogOpen(false)} disabled={bulkLoading}>
+              Cancel
+            </Button>
+            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={handleBulkApprove} disabled={bulkLoading}>
+              {bulkLoading ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Approving...</>
+              ) : (
+                <><CheckCircle2 className="h-4 w-4 mr-2" /> Approve {selectedCount} lead(s)</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm action dialog (Pending / Reject) */}
+      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{confirmAction?.label || 'Confirm'} Leads</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to mark {selectedCount} selected lead(s) as {confirmAction?.label?.toLowerCase()}?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmDialogOpen(false)} disabled={bulkLoading}>
+              Cancel
+            </Button>
+            <Button
+              variant={confirmAction?.label === 'Rejected' ? 'destructive' : 'default'}
+              onClick={() => confirmAction && handleBulkStatus(confirmAction.status)}
+              disabled={bulkLoading}
+            >
+              {bulkLoading ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Updating...</>
+              ) : (
+                <>{confirmAction?.label} {selectedCount} lead(s)</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Leads</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete {selectedCount} selected lead(s)? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)} disabled={bulkLoading}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleBulkDelete} disabled={bulkLoading}>
+              {bulkLoading ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Deleting...</>
+              ) : (
+                <><Trash2 className="h-4 w-4 mr-2" /> Delete {selectedCount} lead(s)</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="rounded-lg border bg-card overflow-hidden">
         <Table>
           <TableHeader>
