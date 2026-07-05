@@ -20,6 +20,17 @@ interface RevenueChartProps {
 
 type ChartView = 'area' | 'bar'
 
+function getDayLabels(): string[] {
+  const labels: string[] = []
+  const today = new Date()
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today)
+    d.setDate(d.getDate() - i)
+    labels.push(d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }))
+  }
+  return labels
+}
+
 export function RevenueChart({ data, isLoading }: RevenueChartProps) {
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === 'dark'
@@ -35,7 +46,7 @@ export function RevenueChart({ data, isLoading }: RevenueChartProps) {
       },
       dataLabels: { enabled: false },
       xaxis: {
-        categories: ['6 days ago', '5 days ago', '4 days ago', '3 days ago', '2 days ago', 'Yesterday', 'Today'],
+        categories: getDayLabels(),
         labels: {
           show: true,
           style: {
@@ -75,6 +86,7 @@ export function RevenueChart({ data, isLoading }: RevenueChartProps) {
       },
       tooltip: {
         theme: isDark ? 'dark' : 'light',
+        followCursor: true,
         y: {
           formatter: (val: number) => val.toLocaleString(),
         },

@@ -50,7 +50,7 @@ export default function DevicesPage() {
   const queryClient = useQueryClient()
   const [deletedToken, setDeletedToken] = useState<string | null>(null)
 
-  const { data, isLoading } = useQuery<{ status: boolean; logins: LoginDevice[] }>({
+  const { data, isLoading } = useQuery<{ status: boolean; data: LoginDevice[] }>({
     queryKey: ['login-devices'],
     queryFn: async () => {
       const res = await authFetch(`${apiConfig.baseUrl}/api/v1/users/me/sessions`)
@@ -78,7 +78,7 @@ export default function DevicesPage() {
     },
   })
 
-  const logins = data?.logins || []
+  const logins = data?.data || []
 
   if (isLoading) {
     return (

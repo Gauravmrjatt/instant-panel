@@ -1,5 +1,7 @@
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { apiConfig, authFetch } from '@/lib/config'
+import type { Filter } from '@/components/leads/filter-types'
+import { serializeFilters } from '@/components/leads/filter-types'
 
 export interface LeadData {
   id: string
@@ -36,12 +38,13 @@ export interface LeadsPaginationMeta {
   limit: number
 }
 
-export function useLeads(campaignId: string, page: number = 1, limit: number = 20) {
+export function useLeads(campaignId: string, page: number = 1, limit: number = 20, filters: Filter[] = []) {
+  const filtersParam = filters.length > 0 ? `&filters=${encodeURIComponent(serializeFilters(filters))}` : ''
   return useQuery<{ data: LeadData[]; pagination: LeadsPaginationMeta }>({
-    queryKey: ['leads', campaignId, page, limit],
+    queryKey: ['leads', campaignId, page, limit, filters],
     queryFn: async () => {
       const res = await authFetch(
-        `${apiConfig.baseUrl}/api/v1/campaigns/${campaignId}/leads?page=${page}&limit=${limit}`
+        `${apiConfig.baseUrl}/api/v1/campaigns/${campaignId}/leads?page=${page}&limit=${limit}${filtersParam}`
       )
       const json: LeadsResponse = await res.json()
       if (!json.status) {

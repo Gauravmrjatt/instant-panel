@@ -19,8 +19,9 @@ async function toggleGlobal(req, res) {
     const oldToken = req.user.db.PostbackToken;
     const enabled = req.body?.enabled;
     const result = await service.toggleGlobalPostback(req.user.loginToken, enabled);
-    service.clearUserCache(oldToken);
-    await clearAuthCache(req.user.loginToken);
+    await service.clearUserCache(oldToken);
+    const loginTokens = req.user.db.loginToken || [];
+    await Promise.all(loginTokens.map(token => clearAuthCache(token)));
     res.json(result);
   } catch (error) {
     logger.error({ err: error }, "toggleGlobal error");
@@ -32,7 +33,9 @@ async function regenerateToken(req, res) {
   try {
     const oldToken = req.user.db.PostbackToken;
     const result = await service.regeneratePostbackToken(req.user.db._id);
-    service.clearUserCache(oldToken);
+    await service.clearUserCache(oldToken);
+    const loginTokens = req.user.db.loginToken || [];
+    await Promise.all(loginTokens.map(token => clearAuthCache(token)));
     res.json(result);
   } catch (error) {
     res.json({ status: false, msg: "Error while updating key" });

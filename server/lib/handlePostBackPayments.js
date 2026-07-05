@@ -230,6 +230,7 @@ const handlePayment = async (
         referPaymentStatus: PAYSTATUSREFER,
         referPayMessage: PAYMESSAGEREFER,
       }).save();
+      redisClient.del(`dashboard:${lead.userId}`).catch(() => {});
     }
     
   } catch (error) {

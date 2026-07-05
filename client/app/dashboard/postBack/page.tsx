@@ -94,6 +94,7 @@ export default function PostBackPage() {
       if (data.status) {
         toast.success("Postback API key reset successfully!");
         queryClient.invalidateQueries({ queryKey: ["postback"] });
+        queryClient.invalidateQueries({ queryKey: ["user-profile"] });
         setResetConfirmOpen(false);
         setConfirmText("");
       } else {

@@ -6,6 +6,7 @@ const {
 const handlePayment = require("../../lib/handlePostBackPayments");
 const { incrementCapCounters } = require("../../modules/postback/service");
 const Lead = require("../../modules/leads/model");
+const redisClient = require("../../lib/redisClient");
 const logger = require("../../lib/logger");
 
 const QUEUE_NAME = "payment_processing";
@@ -35,6 +36,7 @@ async function startPaymentWorker() {
         throw err;
       }
 
+      redisClient.del(`dashboard:${lead.userId || userId}`).catch(() => {});
       incrementCapCounters(camp._id || camp._id, lead.event).catch((e) =>
         logger.error({ err: e, click: lead.click, event: lead.event }, "PaymentWorker >> incrementCapCounters failed")
       );

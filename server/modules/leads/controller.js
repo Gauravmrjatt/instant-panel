@@ -3,7 +3,11 @@ const logger = require("../../lib/logger");
 
 async function list(req, res) {
   try {
-    const result = await service.getLeads(req.user.db._id, req.params.campId, req.query.page, req.query.limit);
+    let filters = [];
+    if (req.query.filters) {
+      try { filters = JSON.parse(req.query.filters); } catch {}
+    }
+    const result = await service.getLeads(req.user.db._id, req.params.campId, req.query.page, req.query.limit, filters);
     res.json(result);
   } catch (error) {
     res.json({ status: false, msg: "Something went wrong", error });

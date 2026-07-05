@@ -9,6 +9,13 @@ const { default: axios } = require("axios");
 const handelPayment = require("../../lib/handelPayments");
 const handelManualPayment = require("../../lib/handelManualPayments");
 const Notification = require("../../lib/handelNotification");
+const redisClient = require("../../lib/redisClient");
+const { clearReportsCache } = require("../reports/service");
+
+function clearUserCaches(userId) {
+  redisClient.del(`dashboard:${userId}`).catch(() => {});
+  clearReportsCache(userId).catch(() => {});
+}
 
 function generateRandomOrderId(length) {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -57,6 +64,7 @@ async function processPaymentForLead(userId, leadId, event, tg) {
   const payments = await Payments.find({ userId, event, clickId: Lead.clickId._id });
   if (payments.length > 0) return { status: false, msg: "Payment already found!", leadData: Lead, payments: { status: true, data: payments } };
   handelManualPayment(userId, eventData, Lead, tg || {});
+  clearUserCaches(userId);
   return { status: true, msg: "all working" };
 }
 
@@ -79,6 +87,7 @@ async function approvePendingPayments(userId, campaignId, userNumber, comment) {
     PendingPayment.updateMany({ userId: new ObjectId(userId), status: { $in: ["PENDING", "ACCEPTED"] }, type: "refer", paymentStatus: { $nin: ["ACCEPTED"] }, campId: new ObjectId(campaignId), user: userNumber, clickId: { $in: clicks } }, { status: "ACCEPTED", paymentStatus: status, payMessage, message: "We have proceed your request please check payment status", response: payment }),
     Leads.updateMany({ userId: new ObjectId(userId), status: "Approved", referPaymentStatus: "PENDING", campId: new ObjectId(campaignId), clickId: { $in: clicks } }, { referPaymentStatus: status, referPayMessage: payMessage }),
   ]);
+  clearUserCaches(userId);
   return { status: true, data: { total: totalAmount, clicks }, payment };
 }
 
@@ -89,6 +98,7 @@ async function rejectPendingPayments(userId, campaignId) {
     PendingPayment.updateMany({ userId: new ObjectId(userId), status: { $in: ["PENDING", "ACCEPTED"] }, paymentStatus: { $nin: ["ACCEPTED"] }, campId: new ObjectId(campaignId) }, { status: "REJECTED", paymentStatus: "REJECTED", payMessage: "Rejected by admin" }),
     Leads.updateMany({ userId: new ObjectId(userId), status: "Approved", referPaymentStatus: "PENDING", campId: new ObjectId(campaignId), clickId: { $in: clicks } }, { referPaymentStatus: "REJECTED", referPayMessage: "Rejected by admin" }),
   ]);
+  clearUserCaches(userId);
   return { status: true, msg: "all set to rejected" };
 }
 

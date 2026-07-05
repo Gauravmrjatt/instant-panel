@@ -61,4 +61,16 @@ async function getNewReportData(userId, id) {
   };
 }
 
-module.exports = { getReportsData, getNewReportData };
+async function clearReportsCache(userId) {
+  let cursor = 0;
+  const pattern = `reports:${userId}:*`;
+  do {
+    const result = await redisClient.scan(cursor, { MATCH: pattern, COUNT: 50 });
+    cursor = result.cursor;
+    if (result.keys.length > 0) {
+      await redisClient.del(result.keys).catch(() => {});
+    }
+  } while (cursor !== 0);
+}
+
+module.exports = { getReportsData, getNewReportData, clearReportsCache };

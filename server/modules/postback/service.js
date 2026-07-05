@@ -52,10 +52,10 @@ async function queueLead(data) {
   }
 }
 
-function clearUserCache(token) {
+async function clearUserCache(token) {
   if (token) {
     postbackUserCache.delete(token);
-    redisClient.del(`postbackUser:${token}`).catch(() => {});
+    await redisClient.del(`postbackUser:${token}`).catch(() => {});
   }
 }
 
@@ -130,6 +130,12 @@ async function resolvePostbackClick(click, userId) {
 
 const campaignByIdCache = new LRUCache({ max: 5000, ttl: 60_000 });
 const campSelectFields = "campStatus events delay ips same ip paytm prevEvent name postbackToken referPending userPending offerID";
+
+async function clearCampaignByIdCache(campId) {
+  const key = String(campId);
+  campaignByIdCache.delete(key);
+  await redisClient.del(`postbackCampById:${key}`).catch(() => {});
+}
 
 async function resolveCampaignById(campId) {
   const key = String(campId);
@@ -442,6 +448,7 @@ module.exports = {
   resolveCampaignPostback,
   resolvePostbackClick,
   resolveCampaignById,
+  clearCampaignByIdCache,
   resolveCustomAmount,
   checkLeadDuplicates,
   checkBans,

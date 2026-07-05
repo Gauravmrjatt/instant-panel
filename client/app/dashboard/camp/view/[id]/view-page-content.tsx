@@ -1,6 +1,6 @@
 'use client'
-import { Suspense, useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState, useEffect, useCallback, useMemo } from 'react'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
@@ -8,11 +8,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
-import { Input } from '@/components/ui/input'
 import { authFetch, apiConfig } from '@/lib/config'
 
 import { LeadsTable } from '@/components/leads/leads-table'
 import { useLeads } from '@/hooks/useLeads'
+import { FilterBuilder, FilterChips } from '@/components/leads/filter-builder'
+import type { Filter } from '@/components/leads/filter-types'
+import { deserializeFilters, serializeFilters } from '@/components/leads/filter-types'
 import type { PaginationState } from '@tanstack/react-table'
 import {
   ArrowLeft,
@@ -33,7 +35,6 @@ import {
   Link as LinkIcon,
   IndianRupee,
   Settings,
-  Search,
   Timer,
   RefreshCw,
   Eye,
@@ -56,12 +57,41 @@ interface EventData {
 
 export default function ViewCampaignContent({ campaignId }: { campaignId: string }) {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [domain, setDomain] = useState('')
-  const [searchQuery, setSearchQuery] = useState('')
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 20,
   })
+
+  const filtersFromUrl = useMemo(() => {
+    const raw = searchParams.get('filters')
+    return raw ? deserializeFilters(raw) : []
+  }, [searchParams])
+
+  const [filters, setFilters] = useState<Filter[]>(filtersFromUrl)
+
+  useEffect(() => {
+    setFilters(filtersFromUrl)
+  }, [filtersFromUrl])
+
+  const syncFiltersToUrl = useCallback((newFilters: Filter[]) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (newFilters.length > 0) {
+      params.set('filters', serializeFilters(newFilters))
+    } else {
+      params.delete('filters')
+    }
+    params.delete('page')
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
+  }, [searchParams, pathname, router])
+
+  const handleFilterChange = useCallback((newFilters: Filter[]) => {
+    setFilters(newFilters)
+    syncFiltersToUrl(newFilters)
+  }, [syncFiltersToUrl])
 
   const handlePaginationChange = useCallback(
     (updater: PaginationState | ((old: PaginationState) => PaginationState)) => {
@@ -90,7 +120,8 @@ export default function ViewCampaignContent({ campaignId }: { campaignId: string
   const { data: leadsResult, isLoading: isLoadingLeads, refetch } = useLeads(
     campaignId,
     pagination.pageIndex + 1,
-    pagination.pageSize
+    pagination.pageSize,
+    filters
   )
 
   const leadsData = leadsResult?.data || []
@@ -258,33 +289,27 @@ export default function ViewCampaignContent({ campaignId }: { campaignId: string
           {/* Leads Table */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-blue-500/10">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="p-2 rounded-lg bg-blue-500/10 shrink-0">
                     <Users className="h-5 w-5 text-blue-500" />
                   </div>
-                  <div>
-                    <CardTitle>Leads</CardTitle>
-                    <CardDescription>View and manage leads for this campaign</CardDescription>
+                  <div className="min-w-0">
+                    <CardTitle className="truncate">Leads</CardTitle>
+                    <CardDescription className="truncate">View and manage leads for this campaign</CardDescription>
                   </div>
                 </div>
-                <div className="relative w-64">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    className="pl-9"
-                    placeholder="Search leads..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
+                <div className="sm:ml-auto">
+                  <FilterBuilder filters={filters} onChange={handleFilterChange} />
                 </div>
               </div>
             </CardHeader>
             <CardContent>
+              <FilterChips filters={filters} onRemove={(i) => handleFilterChange(filters.filter((_, j) => j !== i))} />
               <LeadsTable
                 data={leadsData}
                 isLoading={isLoadingLeads}
                 campaignId={campaignId}
-                searchQuery={searchQuery}
                 pageCount={paginationMeta.totalPages}
                 totalCount={paginationMeta.totalCount}
                 pagination={pagination}

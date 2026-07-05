@@ -84,6 +84,7 @@ export default function EditCampaignContent({
         delay: "",
     });
     const [settings, setSettings] = useState({
+        campStatus: true,
         paytm: false,
         ip: false,
         same: false,
@@ -112,12 +113,6 @@ export default function EditCampaignContent({
     const [eventModalOpen, setEventModalOpen] = useState(false);
     const [addIpModalOpen, setAddIpModalOpen] = useState(false);
     const [editingEventIndex, setEditingEventIndex] = useState<number | null>(null);
-    const [editDialogOpen, setEditDialogOpen] = useState(false);
-    const [editFormData, setEditFormData] = useState<EventData>({
-        name: "", user: "", refer: "", userComment: "", referComment: "",
-        caps: "", time: "", payMode: "auto", capSwitch: false, timeSwitch: false,
-        dailySwitch: false, dailyCaps: "",
-    });
 
     const { data: campaign, isLoading } = useQuery({
         queryKey: ["campaign", campaignId],
@@ -160,6 +155,7 @@ export default function EditCampaignContent({
                 delay: c.delay || "",
             });
             setSettings({
+                campStatus: c.campStatus !== false,
                 paytm: c.paytm || false,
                 ip: c.ip || false,
                 same: c.same || false,
@@ -184,7 +180,15 @@ export default function EditCampaignContent({
         setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
     };
 
-    const addEvent = () => {
+    const resetNewEvent = () => {
+        setNewEvent({
+            name: "", user: "", refer: "", userComment: "", referComment: "",
+            caps: "", time: "", payMode: "auto", capSwitch: false, timeSwitch: false,
+            dailySwitch: false, dailyCaps: "",
+        });
+    };
+
+    const handleEventSubmit = () => {
         if (!newEvent.name || !newEvent.user || !newEvent.refer) {
             toast.error("Event name, user amount and refer amount required");
             return;
@@ -193,34 +197,28 @@ export default function EditCampaignContent({
             toast.error("User comment and refer comment required");
             return;
         }
-        setEvents((prev) => [...prev, newEvent]);
-        setNewEvent({
-            name: "",
-            user: "",
-            refer: "",
-            userComment: "",
-            referComment: "",
-            caps: "",
-            time: "",
-            payMode: "auto",
-            capSwitch: false,
-            timeSwitch: false,
-            dailySwitch: false,
-            dailyCaps: "",
-        });
-        setEventModalOpen(false);
-        toast.success("Event added successfully");
-    };
 
-    const deleteEvent = (index: number) => {
-        setEvents((prev) => prev.filter((_, i) => i !== index));
-        toast.success("Event removed");
+        if (editingEventIndex !== null) {
+            setEvents((prev) => {
+                const updated = [...prev];
+                updated[editingEventIndex] = newEvent;
+                return updated;
+            });
+            setEditingEventIndex(null);
+            resetNewEvent();
+            setEventModalOpen(false);
+            toast.success("Event updated successfully");
+        } else {
+            setEvents((prev) => [...prev, newEvent]);
+            resetNewEvent();
+            setEventModalOpen(false);
+            toast.success("Event added successfully");
+        }
     };
 
     const handleEditEvent = (index: number) => {
-        const event = events[index]
-        setEditingEventIndex(index)
-        setEditFormData({
+        const event = events[index];
+        setNewEvent({
             name: event.name || "",
             user: event.user || "",
             refer: event.refer || "",
@@ -233,28 +231,15 @@ export default function EditCampaignContent({
             timeSwitch: event.timeSwitch || false,
             dailySwitch: event.dailySwitch || false,
             dailyCaps: event.dailyCaps || "",
-        })
-        setEditDialogOpen(true)
-    }
+        });
+        setEditingEventIndex(index);
+        setEventModalOpen(true);
+    };
 
-    const handleSaveEdit = () => {
-        if (editingEventIndex === null) return
-        if (!editFormData.name || !editFormData.user || !editFormData.refer) {
-            toast.error("Event name, user amount and refer amount required");
-            return;
-        }
-        if (!editFormData.userComment || !editFormData.referComment) {
-            toast.error("User comment and refer comment required");
-            return;
-        }
-        setEvents((prev) => {
-            const updated = [...prev]
-            updated[editingEventIndex] = editFormData
-            return updated
-        })
-        setEditDialogOpen(false)
-        toast.success("Event updated successfully")
-    }
+    const deleteEvent = (index: number) => {
+        setEvents((prev) => prev.filter((_, i) => i !== index));
+        toast.success("Event removed");
+    };
 
     const addIP = () => {
         if (!newIp) return;
@@ -432,7 +417,13 @@ export default function EditCampaignContent({
                                 </CardDescription>
                             </div>
                         </div>
-                        <Dialog open={eventModalOpen} onOpenChange={setEventModalOpen}>
+                        <Dialog open={eventModalOpen} onOpenChange={(open) => {
+                            setEventModalOpen(open);
+                            if (!open && editingEventIndex !== null) {
+                                setEditingEventIndex(null);
+                                resetNewEvent();
+                            }
+                        }}>
                             <DialogTrigger>
                                 <Button size="sm" className="gap-2">
                                     <Plus className="h-4 w-4" />
@@ -442,11 +433,18 @@ export default function EditCampaignContent({
                             <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
                                 <DialogHeader>
                                     <DialogTitle className="flex items-center gap-2">
-                                        <Zap className="h-5 w-5 text-amber-500" />
-                                        Add New Event
+                                        {editingEventIndex !== null ? (
+                                            <Pencil className="h-5 w-5 text-amber-500" />
+                                        ) : (
+                                            <Zap className="h-5 w-5 text-amber-500" />
+                                        )}
+                                        {editingEventIndex !== null ? "Edit Event" : "Add New Event"}
                                     </DialogTitle>
                                     <DialogDescription>
-                                        Configure the event details and payout amounts
+                                        {editingEventIndex !== null
+                                            ? "Update the event details and payout amounts"
+                                            : "Configure the event details and payout amounts"
+                                        }
                                     </DialogDescription>
                                 </DialogHeader>
                                 <div className="space-y-4 py-4">
@@ -691,269 +689,17 @@ export default function EditCampaignContent({
                                     >
                                         Cancel
                                     </Button>
-                                    <Button onClick={addEvent}>Add Event</Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
-
-                        {/* Edit Event Dialog */}
-                        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-                            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-                                <DialogHeader>
-                                    <DialogTitle className="flex items-center gap-2">
-                                        <Pencil className="h-5 w-5 text-amber-500" />
-                                        Edit Event
-                                    </DialogTitle>
-                                    <DialogDescription>
-                                        Update the event details and payout amounts
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <div className="space-y-4 py-4">
-                                    <div className="space-y-2">
-                                        <Label>
-                                            Event Name <span className="text-destructive">*</span>
-                                        </Label>
-                                        <Input
-                                            placeholder="e.g., Install, Signup, Purchase"
-                                            value={editFormData.name}
-                                            onChange={(e) =>
-                                                setEditFormData((prev) => ({
-                                                    ...prev,
-                                                    name: e.target.value,
-                                                }))
-                                            }
-                                        />
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label className="flex items-center gap-1">
-                                                User Amount <span className="text-destructive">*</span>
-                                            </Label>
-                                            <Input
-                                                type="number"
-                                                placeholder="0.00"
-                                                value={editFormData.user}
-                                                onChange={(e) =>
-                                                    setEditFormData((prev) => ({
-                                                        ...prev,
-                                                        user: e.target.value,
-                                                    }))
-                                                }
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="flex items-center gap-1">
-                                                Refer Amount <span className="text-destructive">*</span>
-                                            </Label>
-                                            <Input
-                                                type="number"
-                                                placeholder="0.00"
-                                                value={editFormData.refer}
-                                                onChange={(e) =>
-                                                    setEditFormData((prev) => ({
-                                                        ...prev,
-                                                        refer: e.target.value,
-                                                    }))
-                                                }
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <Separator />
-
-                                    <div className="space-y-2">
-                                        <Label>
-                                            User Comment <span className="text-destructive">*</span>
-                                        </Label>
-                                        <Input
-                                            placeholder="e.g., Thank you for signing up!"
-                                            value={editFormData.userComment}
-                                            onChange={(e) =>
-                                                setEditFormData((prev) => ({
-                                                    ...prev,
-                                                    userComment: e.target.value,
-                                                }))
-                                            }
-                                        />
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label>
-                                            Refer Comment <span className="text-destructive">*</span>
-                                        </Label>
-                                        <Input
-                                            placeholder="e.g., Bonus for referring a friend!"
-                                            value={editFormData.referComment}
-                                            onChange={(e) =>
-                                                setEditFormData((prev) => ({
-                                                    ...prev,
-                                                    referComment: e.target.value,
-                                                }))
-                                            }
-                                        />
-                                    </div>
-
-                                    <Separator />
-
-                                    <div className="space-y-3">
-                                        <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                                            Limits & Controls
-                                        </h4>
-
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <Hash className="h-4 w-4 text-muted-foreground" />
-                                                <Label htmlFor="capSwitch">Total Limit (Caps)</Label>
-                                            </div>
-                                            <div className="flex items-center gap-3">
-                                                {editFormData.capSwitch && (
-                                                    <Input
-                                                        type="number"
-                                                        placeholder="Max count"
-                                                        className="w-24 h-8"
-                                                        value={editFormData.caps}
-                                                        onChange={(e) =>
-                                                            setEditFormData((prev) => ({
-                                                                ...prev,
-                                                                caps: e.target.value,
-                                                            }))
-                                                        }
-                                                    />
-                                                )}
-                                                <Switch
-                                                    id="capSwitch"
-                                                    checked={editFormData.capSwitch}
-                                                    onCheckedChange={(checked) =>
-                                                        setEditFormData((prev) => ({
-                                                            ...prev,
-                                                            capSwitch: checked,
-                                                            caps: checked ? prev.caps : "",
-                                                        }))
-                                                    }
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <Timer className="h-4 w-4 text-muted-foreground" />
-                                                <Label htmlFor="dailySwitch">Daily Limit</Label>
-                                            </div>
-                                            <div className="flex items-center gap-3">
-                                                {editFormData.dailySwitch && (
-                                                    <Input
-                                                        type="number"
-                                                        placeholder="Max daily"
-                                                        className="w-24 h-8"
-                                                        value={editFormData.dailyCaps}
-                                                        onChange={(e) =>
-                                                            setEditFormData((prev) => ({
-                                                                ...prev,
-                                                                dailyCaps: e.target.value,
-                                                            }))
-                                                        }
-                                                    />
-                                                )}
-                                                <Switch
-                                                    id="dailySwitch"
-                                                    checked={editFormData.dailySwitch}
-                                                    onCheckedChange={(checked) =>
-                                                        setEditFormData((prev) => ({
-                                                            ...prev,
-                                                            dailySwitch: checked,
-                                                            dailyCaps: checked ? prev.dailyCaps : "",
-                                                        }))
-                                                    }
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <Clock className="h-4 w-4 text-muted-foreground" />
-                                                <Label htmlFor="timeSwitch">
-                                                    Track Next Event After Time
-                                                </Label>
-                                            </div>
-                                            <div className="flex items-center gap-3">
-                                                {editFormData.timeSwitch && (
-                                                    <Input
-                                                        type="number"
-                                                        placeholder="Minutes"
-                                                        className="w-24 h-8"
-                                                        value={editFormData.time}
-                                                        onChange={(e) =>
-                                                            setEditFormData((prev) => ({
-                                                                ...prev,
-                                                                time: e.target.value,
-                                                            }))
-                                                        }
-                                                    />
-                                                )}
-                                                <Switch
-                                                    id="timeSwitch"
-                                                    checked={editFormData.timeSwitch}
-                                                    onCheckedChange={(checked) =>
-                                                        setEditFormData((prev) => ({
-                                                            ...prev,
-                                                            timeSwitch: checked,
-                                                            time: checked ? prev.time : "",
-                                                        }))
-                                                    }
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <Separator />
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="payMode">Pay Mode</Label>
-                                        <div className="flex gap-2">
-                                            <Button
-                                                variant={
-                                                    editFormData.payMode === "auto" ? "default" : "outline"
-                                                }
-                                                size="sm"
-                                                className="flex-1 gap-2"
-                                                onClick={() =>
-                                                    setEditFormData((prev) => ({ ...prev, payMode: "auto" }))
-                                                }
-                                            >
-                                                <CheckCircle2 className="h-4 w-4" />
-                                                Auto
-                                            </Button>
-                                            <Button
-                                                variant={
-                                                    editFormData.payMode === "manual" ? "default" : "outline"
-                                                }
-                                                size="sm"
-                                                className="flex-1 gap-2"
-                                                onClick={() =>
-                                                    setEditFormData((prev) => ({
-                                                        ...prev,
-                                                        payMode: "manual",
-                                                    }))
-                                                }
-                                            >
-                                                <Clock className="h-4 w-4" />
-                                                Manual
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <DialogFooter>
-                                    <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-                                        Cancel
-                                    </Button>
-                                    <Button onClick={handleSaveEdit} className="gap-2">
-                                        <Save className="h-4 w-4" />
-                                        Save
+                                    <Button onClick={handleEventSubmit}>
+                                        {editingEventIndex !== null ? (
+                                            <><Save className="h-4 w-4 mr-2" />Save</>
+                                        ) : (
+                                            "Add Event"
+                                        )}
                                     </Button>
                                 </DialogFooter>
                             </DialogContent>
                         </Dialog>
+
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -1175,6 +921,25 @@ export default function EditCampaignContent({
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/30 transition-colors">
+                            <div className="flex items-center gap-3">
+                                <Zap className="h-5 w-5 text-muted-foreground" />
+                                <div>
+                                    <Label htmlFor="campStatus" className="font-medium cursor-pointer">
+                                        Campaign Status
+                                    </Label>
+                                    <p className="text-xs text-muted-foreground">
+                                        {settings.campStatus ? "Active — conversions are being processed" : "Paused — conversions are blocked"}
+                                    </p>
+                                </div>
+                            </div>
+                            <Switch
+                                id="campStatus"
+                                checked={settings.campStatus}
+                                onCheckedChange={() => handleSettingChange("campStatus")}
+                            />
+                        </div>
+
                         <div className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/30 transition-colors">
                             <div className="flex items-center gap-3">
                                 <Users className="h-5 w-5 text-muted-foreground" />

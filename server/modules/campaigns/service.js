@@ -1,6 +1,7 @@
 const Campaign = require("./model");
 const redisClient = require("../../lib/redisClient");
 const { v4: uuidv4 } = require("uuid");
+const { clearCampaignByIdCache } = require("../postback/service");
 
 async function createCampaign(userId, user, data) {
   const { offerID } = data;
@@ -47,7 +48,9 @@ async function updateCampaign(userId, id, data) {
   await Promise.all([
     redisClient.del(`campaign:${id}`),
     redisClient.del(`campaigns:${userId}`),
+    redisClient.del(`dashboard:${userId}`),
     ...(before.postbackToken ? [redisClient.del(`postbackCamp:${before.postbackToken}`)] : []),
+    clearCampaignByIdCache(id),
   ]);
   return { status: true, data: {} };
 }
@@ -61,6 +64,7 @@ async function deleteCampaign(userId, id) {
     redisClient.del(`dashboard:${userId}`),
     redisClient.del(`campaigns:${userId}`),
     ...(campaign.postbackToken ? [redisClient.del(`postbackCamp:${campaign.postbackToken}`)] : []),
+    clearCampaignByIdCache(id),
   ]);
   return { status: true, msg: "Deleted Successfully" };
 }

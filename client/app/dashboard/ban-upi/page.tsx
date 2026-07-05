@@ -110,7 +110,7 @@ export default function BanUpiPage() {
   };
 
   const filteredBans =
-    bannedUpi?.list?.bans?.filter((item: any) =>
+    bannedUpi?.data?.filter((item: any) =>
       item.number?.toLowerCase().includes(searchQuery.toLowerCase()),
     ) || [];
 
@@ -161,7 +161,7 @@ export default function BanUpiPage() {
                 <p className="text-sm font-medium text-muted-foreground">
                   Total Banned
                 </p>
-                <p className="text-2xl font-bold">{bannedUpi?.count || 0}</p>
+                <p className="text-2xl font-bold">{bannedUpi?.data?.length || 0}</p>
               </div>
               <div className="p-3 rounded-lg bg-destructive/10">
                 <ShieldAlert className="h-5 w-5 text-destructive" />

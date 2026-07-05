@@ -428,19 +428,16 @@ export function DashboardSidebar({
             <SidebarMenuItem>
               <DropdownMenu>
                 <DropdownMenuTrigger>
-                  <SidebarMenuButton
-                    className="w-full h-12 justify-center px-0"
-                    title="User Menu"
-                  >
+                  <div className="w-full h-12 flex items-center justify-center cursor-pointer">
                     <IconLogout className="h-5 w-5 shrink-0 hover:text-destructive" />
-                  </SidebarMenuButton>
+                  </div>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   side="right"
                   sideOffset={8}
                   className="w-48"
                 >
-                  <DropdownMenuLabel className="p-0 font-normal">
+                  <div className="p-0 font-normal">
                     <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                       <Avatar className="h-8 w-8 rounded-full">
                         <AvatarImage src={user?.profileImg} alt={user?.name} />
@@ -457,7 +454,7 @@ export function DashboardSidebar({
                         </span>
                       </div>
                     </div>
-                  </DropdownMenuLabel>
+                  </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem>
                     <Link
@@ -553,7 +550,7 @@ export function DashboardSidebar({
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger>
-                <SidebarMenuButton className="w-full h-12 px-3 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground max-w-full">
+                <div className="w-full h-12 px-3 flex items-center gap-3 max-w-full cursor-pointer">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     {user?.profileImg ? (
                       <Avatar className="h-8 w-8 rounded-full">
@@ -579,7 +576,7 @@ export function DashboardSidebar({
                     </div>
                   </div>
                   <IconDotsVertical className="ml-auto size-4" />
-                </SidebarMenuButton>
+                </div>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 side="right"
@@ -587,7 +584,7 @@ export function DashboardSidebar({
                 sideOffset={4}
                 className="w-56"
               >
-                <DropdownMenuLabel className="p-0 font-normal">
+                <div className="p-0 font-normal">
                   <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                     <Avatar className="h-8 w-8 rounded-full">
                       <AvatarImage src={user?.profileImg} alt={user?.name} />
@@ -604,7 +601,7 @@ export function DashboardSidebar({
                       </span>
                     </div>
                   </div>
-                </DropdownMenuLabel>
+                </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
                   <Link
