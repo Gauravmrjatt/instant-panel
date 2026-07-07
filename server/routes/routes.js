@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-
+const logger = require("../lib/logger");
 router.use("/", require("../modules/auth/routes"));
 router.use("/", require("../modules/campaigns/routes"));
 router.use("/", require("../modules/leads/routes"));
