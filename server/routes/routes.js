@@ -18,4 +18,10 @@ router.use("/", require("../modules/dashboard/routes"));
 router.use("/", require("../modules/reports/routes"));
 router.use("/", require("../modules/apis/routes"));
 
+router.use("/api/v1/test", (req, res) => {
+  res.json({ message: "Hello World!" });
+  logger.info(req.headers);
+  console.log(req.headers);
+});
+
 module.exports = router;

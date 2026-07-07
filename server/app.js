@@ -10,7 +10,7 @@ const promClient = require("prom-client");
 const responseTime = require("response-time");
 const logger = require("./lib/logger");
 
-const routes = require("./middlewares/routes");
+const routes = require("./routes/routes");
 
 const app = express();
 
