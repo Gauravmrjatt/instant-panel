@@ -200,7 +200,27 @@ function consumeMessages(queueName, onMessage) {
     } catch (err) {
       logger.error({ queue: queueName, err: err.message }, "Error processing message");
       const isConnErr = err?.message?.includes("PoolClosed") || err?.message?.includes("ClientClosed") || err?.code === 11000 || err?.message?.includes("closed");
-      try { channel.nack(msg, false, !isConnErr); } catch { /* channel may be closed */ }
+      if (isConnErr) {
+        try { channel.nack(msg, false, false); } catch {}
+        return;
+      }
+      const headers = msg.properties?.headers || {};
+      const retryCount = (headers["x-retry-count"] || 0) + 1;
+      if (retryCount <= 3) {
+        try {
+          channel.sendToQueue(queueName, msg.content, {
+            headers: { ...headers, "x-retry-count": retryCount },
+            persistent: true,
+          });
+          channel.ack(msg);
+          logger.warn({ queue: queueName, retryCount, err: err.message }, "Message requeued for retry");
+        } catch {
+          try { channel.nack(msg, false, false); } catch {}
+        }
+      } else {
+        logger.error({ queue: queueName, retryCount: retryCount - 1, err: err.message }, "Max retries exceeded — sending to DLQ");
+        try { channel.nack(msg, false, false); } catch {}
+      }
     }
   };
   channel.consume(queueName, handler, { noAck: false });
