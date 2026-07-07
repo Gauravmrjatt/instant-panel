@@ -6,4 +6,4 @@ function getClientIp(req) {
     req.socket.remoteAddress
   );
 }
-export default getClientIp;
+module.exports = { getClientIp };

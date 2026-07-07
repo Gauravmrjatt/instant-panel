@@ -813,18 +813,18 @@ export default function EditCampaignContent({
                 </CardContent>
             </Card>
 
-            {/* Blocked IPs Card */}
+            {/* Allowed IPs Card */}
             <Card>
                 <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <div className="p-2 rounded-lg bg-destructive/10">
-                                <Shield className="h-5 w-5 text-destructive" />
+                            <div className="p-2 rounded-lg bg-emerald-500/10">
+                                <Shield className="h-5 w-5 text-emerald-500" />
                             </div>
                             <div>
-                                <CardTitle>Blocked IPs</CardTitle>
+                                <CardTitle>Allowed IPs</CardTitle>
                                 <CardDescription>
-                                    Prevent payments from specific IP addresses
+                                    Only allow payments from these IP addresses (leave empty to allow all)
                                 </CardDescription>
                             </div>
                         </div>
@@ -838,11 +838,11 @@ export default function EditCampaignContent({
                             <DialogContent>
                                 <DialogHeader>
                                     <DialogTitle className="flex items-center gap-2">
-                                        <Shield className="h-5 w-5 text-destructive" />
-                                        Block IP Address
+                                        <Shield className="h-5 w-5 text-emerald-500" />
+                                        Whitelist IP Address
                                     </DialogTitle>
                                     <DialogDescription>
-                                        Enter an IP address to block from payments
+                                        Enter an IP address to allow for payments
                                     </DialogDescription>
                                 </DialogHeader>
                                 <div className="space-y-4 py-4">
@@ -865,7 +865,7 @@ export default function EditCampaignContent({
                                     </Button>
                                     <Button onClick={addIP} className="gap-2">
                                         <Shield className="h-4 w-4" />
-                                        Block IP
+                                        Allow IP
                                     </Button>
                                 </DialogFooter>
                             </DialogContent>

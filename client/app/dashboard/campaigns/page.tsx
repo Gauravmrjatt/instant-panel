@@ -1078,17 +1078,17 @@ export default function AddCampaignsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Blocked IPs Card */}
+      {/* Allowed IPs Card */}
       <Card>
         <CardHeader className="pb-4">
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-red-500/10">
-              <Shield className="h-5 w-5 text-red-500" />
+            <div className="p-2 rounded-lg bg-emerald-500/10">
+              <Shield className="h-5 w-5 text-emerald-500" />
             </div>
             <div>
-              <CardTitle>Blocked IPs</CardTitle>
+              <CardTitle>Allowed IPs</CardTitle>
               <CardDescription>
-                Prevent payments from specific IP addresses
+                Only allow payments from these IP addresses (leave empty to allow all)
               </CardDescription>
             </div>
           </div>
@@ -1096,7 +1096,7 @@ export default function AddCampaignsPage() {
         <CardContent className="space-y-4">
           <div className="flex gap-3">
             <Input
-              placeholder="Enter IP Address to block"
+              placeholder="Enter IP Address to whitelist"
               value={newIp}
               onChange={(e) => setNewIp(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addIP()}
