@@ -49,7 +49,8 @@ async function handleGlobalPostback(req, res) {
     const { event } = req.params;
     const { click } = req.query;
     const ip = getClientIp(req);
-
+    logger.info({ ip });
+    
     if (!PostbackToken || !click) return res.json({ status: false, msg: "PostbackToken and click are required" });
     if (!event) return res.json({ status: false, msg: "Event is required" });
 
@@ -57,7 +58,7 @@ async function handleGlobalPostback(req, res) {
     if (!user || !user.globalPostBack) {
       return res.json({ status: false, msg: "Global postback is disabled" });
     }
-
+    
     publishToQueue("global", { PostbackToken, event, click, ip, query: req.query });
     return res.status(202).json({ status: true, msg: "Postback accepted for processing" });
   } catch (error) {

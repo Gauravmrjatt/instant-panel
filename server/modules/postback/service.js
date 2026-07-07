@@ -18,19 +18,25 @@ const postbackUserCache = new LRUCache({ max: 500, ttl: 3600_000 });
 async function getPostbackConfig(user, protocol, host) {
   const { PostbackToken, globalPostBack } = user;
   const domain = `${protocol}://${host}`;
-  return { status: true, msg: "Postback key found!", key: PostbackToken, isEnabled: globalPostBack, url: `${domain}/api/v1/postback/${PostbackToken}/{eventname}?click={click_id}&p1={pass extra params}` };
+  return {
+    status: true,
+    msg: "Postback key found!",
+    key: PostbackToken,
+    isEnabled: globalPostBack,
+    url: `${domain}/api/v1/postback/${PostbackToken}/{eventname}?click={click_id}&p1={pass extra params}`,
+  };
 }
 
 async function toggleGlobalPostback(loginToken, enabled) {
-  const updateOp = enabled !== undefined
-    ? { $set: { globalPostBack: enabled } }
-    : [{ $set: { globalPostBack: { $not: "$globalPostBack" } } }];
-  const updatedUser = await User.findOneAndUpdate(
-    { loginToken },
-    updateOp,
-    { new: true }
-  );
-  if (!updatedUser) return { status: false, msg: "Error in updating postback key" };
+  const updateOp =
+    enabled !== undefined
+      ? { $set: { globalPostBack: enabled } }
+      : [{ $set: { globalPostBack: { $not: "$globalPostBack" } } }];
+  const updatedUser = await User.findOneAndUpdate({ loginToken }, updateOp, {
+    new: true,
+  });
+  if (!updatedUser)
+    return { status: false, msg: "Error in updating postback key" };
   return { status: true, isEnabled: updatedUser.globalPostBack };
 }
 
@@ -39,7 +45,12 @@ async function regeneratePostbackToken(userId) {
   const result = await User.findByIdAndUpdate(userId, { PostbackToken: newID });
   if (!result) return { status: false, msg: "Error while updating key" };
   const url = `${myDetails.domain}api/v1/postback/${newID}/{eventname}?p1={aff_click_id}&p2={sub_aff_id}&o={offerid}`;
-  return { status: true, msg: "Postback Updated Successfully", key: newID, url };
+  return {
+    status: true,
+    msg: "Postback Updated Successfully",
+    key: newID,
+    url,
+  };
 }
 
 async function queueLead(data) {
@@ -71,7 +82,9 @@ async function resolvePostbackUser(token) {
     return user;
   }
 
-  user = await User.findOne({ PostbackToken: token }).select("PostbackToken globalPostBack _id tgId").lean();
+  user = await User.findOne({ PostbackToken: token })
+    .select("PostbackToken globalPostBack _id tgId")
+    .lean();
   if (user) {
     postbackUserCache.set(token, user);
     await redisClient.setEx(redisKey, 3600, JSON.stringify(user));
@@ -92,12 +105,18 @@ async function resolveCampaignPostback(CampaignToken) {
       ? { $or: [{ postbackToken: CampaignToken }, { _id: CampaignToken }] }
       : { postbackToken: CampaignToken };
     camp = await Campaign.findOne(query)
-      .select("_id userId postbackToken campStatus events delay ips same ip paytm prevEvent name referPending userPending offerID")
+      .select(
+        "_id userId postbackToken campStatus events delay ips same ip paytm prevEvent name referPending userPending offerID",
+      )
       .populate("userId", "PostbackToken globalPostBack _id tgId")
       .lean();
     if (camp) {
       user = camp.userId;
-      await redisClient.setEx(campCacheKey, 3600, JSON.stringify({ ...camp, _userId: user }));
+      await redisClient.setEx(
+        campCacheKey,
+        3600,
+        JSON.stringify({ ...camp, _userId: user }),
+      );
     }
   }
   return { camp, user };
@@ -110,13 +129,14 @@ async function resolvePostbackClick(click, userId) {
 
   const selectFields = "_id userId campId click user refer ip createdAt number";
 
-  clickId = await Click.findOne({ click, userId })
-    .select(selectFields)
-    .lean();
+  clickId = await Click.findOne({ click, userId }).select(selectFields).lean();
 
   // Fallback: query with string userId for existing dirty data (stored as string by native driver)
   if (!clickId) {
-    const raw = await Click.collection.findOne({ click, userId: String(userId) });
+    const raw = await Click.collection.findOne({
+      click,
+      userId: String(userId),
+    });
     if (raw) {
       clickId = await Click.findOne({ _id: raw._id })
         .select(selectFields)
@@ -124,12 +144,14 @@ async function resolvePostbackClick(click, userId) {
     }
   }
 
-  if (clickId) await redisClient.setEx(cacheKey, 86400, JSON.stringify(clickId));
+  if (clickId)
+    await redisClient.setEx(cacheKey, 86400, JSON.stringify(clickId));
   return clickId;
 }
 
 const campaignByIdCache = new LRUCache({ max: 5000, ttl: 60_000 });
-const campSelectFields = "campStatus events delay ips same ip paytm prevEvent name postbackToken referPending userPending offerID";
+const campSelectFields =
+  "campStatus events delay ips same ip paytm prevEvent name postbackToken referPending userPending offerID";
 
 async function clearCampaignByIdCache(campId) {
   const key = String(campId);
@@ -155,7 +177,13 @@ async function resolveCampaignById(campId) {
   const camp = await Campaign.findById(campId).select(campSelectFields).lean();
   if (camp) {
     campaignByIdCache.set(key, camp);
-    try { await redisClient.setEx(`postbackCampById:${key}`, 3600, JSON.stringify(camp)); } catch {}
+    try {
+      await redisClient.setEx(
+        `postbackCampById:${key}`,
+        3600,
+        JSON.stringify(camp),
+      );
+    } catch {}
   }
   return camp;
 }
@@ -165,16 +193,24 @@ async function resolveCustomAmount(campId, eventName, refer) {
   let isCustom = await redisClient.get(cacheKey);
   if (isCustom) return JSON.parse(isCustom);
 
-  isCustom = await CustomAmount.findOne({ number: refer, event: eventName, campId })
+  isCustom = await CustomAmount.findOne({
+    number: refer,
+    event: eventName,
+    campId,
+  })
     .select("referAmount userAmount referComment userComment referInstant")
     .lean();
-  if (isCustom) await redisClient.setEx(cacheKey, 300, JSON.stringify(isCustom));
+  if (isCustom)
+    await redisClient.setEx(cacheKey, 300, JSON.stringify(isCustom));
   return isCustom;
 }
 
 async function checkLeadDuplicates(clickId, event) {
   const dedupKey = `postbackDedup:${clickId}:${event}`;
-  const acquired = await redisClient.set(dedupKey, "1", { NX: true, EX: 86400 });
+  const acquired = await redisClient.set(dedupKey, "1", {
+    NX: true,
+    EX: 86400,
+  });
   if (acquired) return false;
   return true;
 }
@@ -198,17 +234,25 @@ async function checkBans(userId, userNumber, referNumber) {
   }
 
   const [dbUserBan, dbReferBan] = await Promise.all([
-    isUserBan === undefined ? Ban.findOne({ userId, number: userNumber.trim().toLowerCase() }).lean() : null,
-    isReferBan === undefined ? Ban.findOne({ userId, number: referNumber.trim().toLowerCase() }).lean() : null,
+    isUserBan === undefined
+      ? Ban.findOne({ userId, number: userNumber.trim().toLowerCase() }).lean()
+      : null,
+    isReferBan === undefined
+      ? Ban.findOne({ userId, number: referNumber.trim().toLowerCase() }).lean()
+      : null,
   ]);
 
   if (isUserBan === undefined) {
     isUserBan = !!dbUserBan;
-    redisClient.set(userBanKey, JSON.stringify(isUserBan), { EX: 300 }).catch(() => {});
+    redisClient
+      .set(userBanKey, JSON.stringify(isUserBan), { EX: 300 })
+      .catch(() => {});
   }
   if (isReferBan === undefined) {
     isReferBan = !!dbReferBan;
-    redisClient.set(referBanKey, JSON.stringify(isReferBan), { EX: 300 }).catch(() => {});
+    redisClient
+      .set(referBanKey, JSON.stringify(isReferBan), { EX: 300 })
+      .catch(() => {});
   }
 
   return { isUserBan, isReferBan };
@@ -267,31 +311,38 @@ async function incrementCapCounters(campId, event) {
   const dailyKey = `cap:daily:${campId}:${event}:${today}`;
   const totalKey = `cap:total:${campId}:${event}`;
 
-  await Promise.all([
-    redisClient.incr(dailyKey),
-    redisClient.incr(totalKey),
-  ]);
+  await Promise.all([redisClient.incr(dailyKey), redisClient.incr(totalKey)]);
 }
 
 async function processPostback({ user, clickDoc, event, ip, query }) {
   const camp = clickDoc.campId;
 
-  if (!user.globalPostBack){
-    logger.warn({ clickId: clickDoc._id, event, userId: user._id }, "processPostback >> Global postback is disabled");
-    return { status: false, msg: "Global postback is disabled" };}
+  if (!user.globalPostBack) {
+    logger.warn(
+      { clickId: clickDoc._id, event, userId: user._id },
+      "processPostback >> Global postback is disabled",
+    );
+    return { status: false, msg: "Global postback is disabled" };
+  }
 
-  if (camp.campStatus === false){
-    logger.warn({ clickId: clickDoc._id, event, userId: user._id }, "processPostback >> Campaign has Paused");
-    return { status: false, msg: "Campaign has Paused" };}
-
-
+  if (camp.campStatus === false) {
+    logger.warn(
+      { clickId: clickDoc._id, event, userId: user._id },
+      "processPostback >> Campaign has Paused",
+    );
+    return { status: false, msg: "Campaign has Paused" };
+  }
 
   const isDuplicate = await checkLeadDuplicates(clickDoc._id, event);
-  if (isDuplicate) return { status: false, msg: "Click id has already Registered" };
+  if (isDuplicate)
+    return { status: false, msg: "Click id has already Registered" };
 
   let indexOfEvent;
   let eventData = camp.events.find((ed, i) => {
-    if (ed.name === event) { indexOfEvent = i; return true; }
+    if (ed.name === event) {
+      indexOfEvent = i;
+      return true;
+    }
     return false;
   });
   if (!eventData) return { status: false, msg: "Invalid Event" };
@@ -315,33 +366,152 @@ async function processPostback({ user, clickDoc, event, ip, query }) {
 
   if (!(query.type && query.type == "manual")) {
     if (camp.ips.length > 0 && !camp.ips.includes(ip)) {
-      await queueLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "REJECTED", message: "IP is not allowed", params: query, paymentStatus: "REJECTED" });
+      await queueLead({
+        clicktoconv,
+        userAmount: eventData.user,
+        referAmount: eventData.refer,
+        click: clickDoc.click,
+        uniqueClick: { campId: camp._id, event, clickId: clickDoc._id },
+        userId: user._id,
+        campId: camp._id,
+        clickId: clickDoc._id,
+        user: clickDoc.user,
+        refer: clickDoc.refer,
+        ip: clickDoc.ip,
+        event,
+        status: "REJECTED",
+        message: "IP is not allowed",
+        params: query,
+        paymentStatus: "REJECTED",
+      });
+      logger.warn(
+        { ip, event, userId: user._id, camp: camp?.ips },
+        "processPostback >> IP is not allowed",
+      );
       return { status: false, msg: "This IP is not allowed." };
     }
   }
 
   if (indexOfEvent == 0 && camp.delay && clicktoconv <= parseInt(camp.delay)) {
-    await queueLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "REJECTED", message: "Click to conversion time delay is invalid", params: query, paymentStatus: "REJECTED" });
-    if (user.tgId && user.tgId.chatId) Notification(user.tgId.chatId, `<b>🛑 New Fraud Lead \n⚠️ Name : ${camp.name}\n♻️ OfferID : ${camp.offerID}\n🌀 Event : ${eventData.name}\n\n🔆 User Number :- ${clickDoc.user}\n📣 Reason :- Click to conversion time delay is invalid\n\n🔆 Refer Number :- ${clickDoc.user}\n📣 Reason :- Click to conversion time delay is invalid\n\n⭐️ Lead is Disputed and Any Payment is Not Debited ✔️\n🧲 Powered By <a href='https://earningarea.in/redirectto?instant'>Earning Area</a>\n</b>`).catch(() => {});
+    await queueLead({
+      clicktoconv,
+      userAmount: eventData.user,
+      referAmount: eventData.refer,
+      click: clickDoc.click,
+      uniqueClick: { campId: camp._id, event, clickId: clickDoc._id },
+      userId: user._id,
+      campId: camp._id,
+      clickId: clickDoc._id,
+      user: clickDoc.user,
+      refer: clickDoc.refer,
+      ip: clickDoc.ip,
+      event,
+      status: "REJECTED",
+      message: "Click to conversion time delay is invalid",
+      params: query,
+      paymentStatus: "REJECTED",
+    });
+    if (user.tgId && user.tgId.chatId)
+      Notification(
+        user.tgId.chatId,
+        `<b>🛑 New Fraud Lead \n⚠️ Name : ${camp.name}\n♻️ OfferID : ${camp.offerID}\n🌀 Event : ${eventData.name}\n\n🔆 User Number :- ${clickDoc.user}\n📣 Reason :- Click to conversion time delay is invalid\n\n🔆 Refer Number :- ${clickDoc.user}\n📣 Reason :- Click to conversion time delay is invalid\n\n⭐️ Lead is Disputed and Any Payment is Not Debited ✔️\n🧲 Powered By <a href='https://earningarea.in/redirectto?instant'>Earning Area</a>\n</b>`,
+      ).catch(() => {});
     return { status: false, msg: "Fraud Lead found" };
   }
 
   if (isUserBan) {
-    await queueLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "REJECTED", message: "User Number is Banned", params: query, paymentStatus: "REJECTED", referPaymentStatus: "REJECTED" });
+    await queueLead({
+      clicktoconv,
+      userAmount: eventData.user,
+      referAmount: eventData.refer,
+      click: clickDoc.click,
+      uniqueClick: { campId: camp._id, event, clickId: clickDoc._id },
+      userId: user._id,
+      campId: camp._id,
+      clickId: clickDoc._id,
+      user: clickDoc.user,
+      refer: clickDoc.refer,
+      ip: clickDoc.ip,
+      event,
+      status: "REJECTED",
+      message: "User Number is Banned",
+      params: query,
+      paymentStatus: "REJECTED",
+      referPaymentStatus: "REJECTED",
+    });
     return { status: false, msg: "User Number is Banned" };
   }
   if (isReferBan) {
-    await queueLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "REJECTED", message: "Refer Number is Banned", params: query, paymentStatus: "REJECTED", referPaymentStatus: "REJECTED" });
+    await queueLead({
+      clicktoconv,
+      userAmount: eventData.user,
+      referAmount: eventData.refer,
+      click: clickDoc.click,
+      uniqueClick: { campId: camp._id, event, clickId: clickDoc._id },
+      userId: user._id,
+      campId: camp._id,
+      clickId: clickDoc._id,
+      user: clickDoc.user,
+      refer: clickDoc.refer,
+      ip: clickDoc.ip,
+      event,
+      status: "REJECTED",
+      message: "Refer Number is Banned",
+      params: query,
+      paymentStatus: "REJECTED",
+      referPaymentStatus: "REJECTED",
+    });
     return { status: false, msg: "Refer Number is Banned" };
   }
 
   if (!camp.same && clickDoc.user.trim() === clickDoc.refer.trim()) {
-    await queueLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "REJECTED", message: "User and refer number are the same", params: query, paymentStatus: "REJECTED", referPaymentStatus: "REJECTED" });
+    await queueLead({
+      clicktoconv,
+      userAmount: eventData.user,
+      referAmount: eventData.refer,
+      click: clickDoc.click,
+      uniqueClick: { campId: camp._id, event, clickId: clickDoc._id },
+      userId: user._id,
+      campId: camp._id,
+      clickId: clickDoc._id,
+      user: clickDoc.user,
+      refer: clickDoc.refer,
+      ip: clickDoc.ip,
+      event,
+      status: "REJECTED",
+      message: "User and refer number are the same",
+      params: query,
+      paymentStatus: "REJECTED",
+      referPaymentStatus: "REJECTED",
+    });
     return { status: false, msg: "User and refer number are the same" };
   }
 
-  if (camp.ip && (await Lead.findOne({ campId: camp._id, ip: clickDoc.ip, event }).select("_id").lean())) {
-    await queueLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "REJECTED", message: "Duplicate IP Address", params: query, paymentStatus: "REJECTED", referPaymentStatus: "REJECTED" });
+  if (
+    camp.ip &&
+    (await Lead.findOne({ campId: camp._id, ip: clickDoc.ip, event })
+      .select("_id")
+      .lean())
+  ) {
+    await queueLead({
+      clicktoconv,
+      userAmount: eventData.user,
+      referAmount: eventData.refer,
+      click: clickDoc.click,
+      uniqueClick: { campId: camp._id, event, clickId: clickDoc._id },
+      userId: user._id,
+      campId: camp._id,
+      clickId: clickDoc._id,
+      user: clickDoc.user,
+      refer: clickDoc.refer,
+      ip: clickDoc.ip,
+      event,
+      status: "REJECTED",
+      message: "Duplicate IP Address",
+      params: query,
+      paymentStatus: "REJECTED",
+      referPaymentStatus: "REJECTED",
+    });
     return { status: false, msg: "One IP can claim only once" };
   }
 
@@ -354,22 +524,88 @@ async function processPostback({ user, clickDoc, event, ip, query }) {
     userQuery = userValue;
   }
 
-  if (camp.paytm && (await Lead.findOne({ campId: camp._id, user: userQuery, event }).select("_id").lean())) {
-    await queueLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "Pending", message: "Duplicate User Number", params: query, paymentStatus: "PENDING", referPaymentStatus: "REJECTED" });
+  if (
+    camp.paytm &&
+    (await Lead.findOne({ campId: camp._id, user: userQuery, event })
+      .select("_id")
+      .lean())
+  ) {
+    await queueLead({
+      clicktoconv,
+      userAmount: eventData.user,
+      referAmount: eventData.refer,
+      click: clickDoc.click,
+      uniqueClick: { campId: camp._id, event, clickId: clickDoc._id },
+      userId: user._id,
+      campId: camp._id,
+      clickId: clickDoc._id,
+      user: clickDoc.user,
+      refer: clickDoc.refer,
+      ip: clickDoc.ip,
+      event,
+      status: "Pending",
+      message: "Duplicate User Number",
+      params: query,
+      paymentStatus: "PENDING",
+      referPaymentStatus: "REJECTED",
+    });
     return { status: false, msg: "One user can claim only once" };
   }
 
-  const { daily: dailyApprovedLeads, total: totalApprovedLeads } = eventData.dailyCaps || eventData.caps
-    ? await getCapCounters(camp._id, event)
-    : { daily: 0, total: 0 };
+  const { daily: dailyApprovedLeads, total: totalApprovedLeads } =
+    eventData.dailyCaps || eventData.caps
+      ? await getCapCounters(camp._id, event)
+      : { daily: 0, total: 0 };
 
-  if (eventData.caps && parseInt(eventData.caps) <= parseInt(totalApprovedLeads)) {
-    await queueLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "Pending", message: "All the Leads have completed", params: query, paymentStatus: "PENDING", referPaymentStatus: "PENDING" });
+  if (
+    eventData.caps &&
+    parseInt(eventData.caps) <= parseInt(totalApprovedLeads)
+  ) {
+    await queueLead({
+      clicktoconv,
+      userAmount: eventData.user,
+      referAmount: eventData.refer,
+      click: clickDoc.click,
+      uniqueClick: { campId: camp._id, event, clickId: clickDoc._id },
+      userId: user._id,
+      campId: camp._id,
+      clickId: clickDoc._id,
+      user: clickDoc.user,
+      refer: clickDoc.refer,
+      ip: clickDoc.ip,
+      event,
+      status: "Pending",
+      message: "All the Leads have completed",
+      params: query,
+      paymentStatus: "PENDING",
+      referPaymentStatus: "PENDING",
+    });
     return { status: true, msg: "This Lead caps has been reached" };
   }
 
-  if (eventData.dailyCaps && parseInt(eventData.dailyCaps) <= parseInt(dailyApprovedLeads)) {
-    await queueLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "Pending", message: "All Daily Leads have completed", params: query, paymentStatus: "PENDING", referPaymentStatus: "PENDING" });
+  if (
+    eventData.dailyCaps &&
+    parseInt(eventData.dailyCaps) <= parseInt(dailyApprovedLeads)
+  ) {
+    await queueLead({
+      clicktoconv,
+      userAmount: eventData.user,
+      referAmount: eventData.refer,
+      click: clickDoc.click,
+      uniqueClick: { campId: camp._id, event, clickId: clickDoc._id },
+      userId: user._id,
+      campId: camp._id,
+      clickId: clickDoc._id,
+      user: clickDoc.user,
+      refer: clickDoc.refer,
+      ip: clickDoc.ip,
+      event,
+      status: "Pending",
+      message: "All Daily Leads have completed",
+      params: query,
+      paymentStatus: "PENDING",
+      referPaymentStatus: "PENDING",
+    });
     return { status: true, msg: "This Lead daily caps has been reached" };
   }
 
@@ -378,11 +614,37 @@ async function processPostback({ user, clickDoc, event, ip, query }) {
   if (indexOfEvent > 0) {
     const time = camp.events[indexOfEvent - 1].time;
     const eventName = camp.events[indexOfEvent - 1].name;
-    const IsprevEvent = await Lead.findOne({ campId: camp._id, user: clickDoc.user, event: eventName, status: { $ne: "REJECTED" }, click: clickDoc.click }).select("createdAt").lean();
+    const IsprevEvent = await Lead.findOne({
+      campId: camp._id,
+      user: clickDoc.user,
+      event: eventName,
+      status: { $ne: "REJECTED" },
+      click: clickDoc.click,
+    })
+      .select("createdAt")
+      .lean();
     checkTime = IsprevEvent?.createdAt ?? null;
     if (isPrevEnable === true) {
       if (!IsprevEvent) {
-        await queueLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "REJECTED", message: "Previous event not found", params: query, paymentStatus: "REJECTED", referPaymentStatus: "REJECTED" });
+        await queueLead({
+          clicktoconv,
+          userAmount: eventData.user,
+          referAmount: eventData.refer,
+          click: clickDoc.click,
+          uniqueClick: { campId: camp._id, event, clickId: clickDoc._id },
+          userId: user._id,
+          campId: camp._id,
+          clickId: clickDoc._id,
+          user: clickDoc.user,
+          refer: clickDoc.refer,
+          ip: clickDoc.ip,
+          event,
+          status: "REJECTED",
+          message: "Previous event not found",
+          params: query,
+          paymentStatus: "REJECTED",
+          referPaymentStatus: "REJECTED",
+        });
         return { status: false, msg: "Previous event not found" };
       }
       if (time > 0 && time != "") {
@@ -390,8 +652,30 @@ async function processPostback({ user, clickDoc, event, ip, query }) {
         const current = new Date();
         const timeDifference = (current - createdAt) / (1000 * 60);
         if (parseInt(timeDifference) <= parseInt(time)) {
-          await queueLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "Pending", message: "Time difference is less than as you set between two events.", params: query, paymentStatus: "PENDING", referPaymentStatus: "PENDING" });
-          return { status: false, msg: "Time difference is less than as you set between two events." };
+          await queueLead({
+            clicktoconv,
+            userAmount: eventData.user,
+            referAmount: eventData.refer,
+            click: clickDoc.click,
+            uniqueClick: { campId: camp._id, event, clickId: clickDoc._id },
+            userId: user._id,
+            campId: camp._id,
+            clickId: clickDoc._id,
+            user: clickDoc.user,
+            refer: clickDoc.refer,
+            ip: clickDoc.ip,
+            event,
+            status: "Pending",
+            message:
+              "Time difference is less than as you set between two events.",
+            params: query,
+            paymentStatus: "PENDING",
+            referPaymentStatus: "PENDING",
+          });
+          return {
+            status: false,
+            msg: "Time difference is less than as you set between two events.",
+          };
         }
       }
     }
@@ -426,16 +710,52 @@ async function processPostback({ user, clickDoc, event, ip, query }) {
     try {
       sendToQueue("payment_processing", JSON.stringify(paymentPayload));
     } catch (err) {
-      logger.warn({ err: err.message }, "payment_processing queue unavailable — processing payment synchronously");
-      await handlePayment(user._id, eventData, paymentPayload.lead, user.tgId, camp, dailyApprovedLeads, totalApprovedLeads, clicktoconv);
+      logger.warn(
+        { err: err.message },
+        "payment_processing queue unavailable — processing payment synchronously",
+      );
+      await handlePayment(
+        user._id,
+        eventData,
+        paymentPayload.lead,
+        user.tgId,
+        camp,
+        dailyApprovedLeads,
+        totalApprovedLeads,
+        clicktoconv,
+      );
       incrementCapCounters(camp._id, event).catch(() => {});
     }
   } else {
-    await queueLead({ clicktoconv, userAmount: eventData.user, referAmount: eventData.refer, click: clickDoc.click, uniqueClick: { campId: camp._id, event, clickId: clickDoc._id }, userId: user._id, campId: camp._id, clickId: clickDoc._id, user: clickDoc.user, refer: clickDoc.refer, ip: clickDoc.ip, event, status: "Pending", message: "This Lead request has been successfully completed. Payment is manual", params: query, paymentStatus: "PENDING", payMessage: "You have set payment mode to manual", referPaymentStatus: "PENDING", referPayMessage: "You have set payment mode to manual" });
+    await queueLead({
+      clicktoconv,
+      userAmount: eventData.user,
+      referAmount: eventData.refer,
+      click: clickDoc.click,
+      uniqueClick: { campId: camp._id, event, clickId: clickDoc._id },
+      userId: user._id,
+      campId: camp._id,
+      clickId: clickDoc._id,
+      user: clickDoc.user,
+      refer: clickDoc.refer,
+      ip: clickDoc.ip,
+      event,
+      status: "Pending",
+      message:
+        "This Lead request has been successfully completed. Payment is manual",
+      params: query,
+      paymentStatus: "PENDING",
+      payMessage: "You have set payment mode to manual",
+      referPaymentStatus: "PENDING",
+      referPayMessage: "You have set payment mode to manual",
+    });
   }
 
   redisClient.del(`dashboard:${user._id}`).catch(() => {});
-  return { status: true, msg: "This Lead request has been successfully completed. Please check payment status." };
+  return {
+    status: true,
+    msg: "This Lead request has been successfully completed. Please check payment status.",
+  };
 }
 
 module.exports = {
