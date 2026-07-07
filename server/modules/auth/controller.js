@@ -1,6 +1,7 @@
 const service = require("./service");
 const { getRequestIpAddress, getRequestDeviceInfo } = require("../../lib/userInfo");
-const requestIp = require("request-ip");
+const { getClientIp } = require("../../lib/ipAddress");
+
 const logger = require("../../lib/logger");
 
 async function register(req, res) {
@@ -9,7 +10,9 @@ async function register(req, res) {
     return res.status(400).json({ status: false, msg: "fill all account details carefully" });
   }
   try {
+
     const result = await service.register(req.body);
+
     const isProduction = process.env.NODE_ENV === "production";
     res.cookie("jwt_token", result.token, {
       expires: new Date(Date.now() + 24 * 60 * 60 * 1000),
@@ -34,7 +37,7 @@ async function login(req, res) {
     return res.json({ status: false, msg: "Fill all account details carefully" });
   }
   try {
-    const ip = requestIp.getClientIp(req);
+    const ip = getClientIp(req);
     const deviceInfo = getRequestDeviceInfo(req);
     const result = await service.login(email, password, ip, deviceInfo);
     if (!result.status) return res.json(result);

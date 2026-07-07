@@ -1,4 +1,5 @@
 const DeviceDetector = require('node-device-detector');
+
 const IP_HEADERS = [
     'Forwarded',
     'Forwarded-For',
@@ -37,6 +38,7 @@ const getRequestIpAddress = request => {
     }
     return null;
 };
+
 const getRequestDeviceInfo = device => {
     const detector = new DeviceDetector({
         clientIndexes: true,

@@ -3,6 +3,7 @@ const { sendToQueue } = require("../../lib/rabbitMQ");
 const redisClient = require("../../lib/redisClient");
 const logger = require("../../lib/logger");
 const { clearAuthCache } = require("../../middlewares/auth");
+const { getClientIp } = require("../../lib/ipAddress");
 
 async function getConfig(req, res) {
   try {
@@ -47,7 +48,7 @@ async function handleGlobalPostback(req, res) {
     const PostbackToken = req.params.token || req.params.PostbackToken;
     const { event } = req.params;
     const { click } = req.query;
-    const ip = req.ip;
+    const ip = getClientIp(req);
 
     if (!PostbackToken || !click) return res.json({ status: false, msg: "PostbackToken and click are required" });
     if (!event) return res.json({ status: false, msg: "Event is required" });
@@ -70,7 +71,7 @@ async function handleCampaignPostback(req, res) {
     const CampaignToken = req.params.campaignId || req.params.CampaignToken;
     const { event } = req.params;
     const { click } = req.query;
-    const ip = req.ip;
+    const ip = getClientIp(req);
 
     if (!CampaignToken || !click) return res.json({ status: false, msg: "CampaignToken and click are required" });
     if (!event) return res.json({ status: false, msg: "Event is required" });
