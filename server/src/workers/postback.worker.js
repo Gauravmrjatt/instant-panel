@@ -34,7 +34,7 @@ async function startPostbackWorker() {
       if (!camp) return;
       clickDoc.campId = camp;
       const t2 = Date.now();
-      const result = await service.processPostback({ user, clickDoc, event: task.event, ip: task.ip, query: task.query });
+      const result = await service.processPostback({ user, clickDoc, event: task.event, ip: task.ip, query: task.query, type: "global" });
       const t3 = Date.now();
       logger.info({ result, click: task.click, campMs: t1 - t0, clickMs: t2 - t1, procMs: t3 - t2, totalMs: t3 - t0 }, "PostbackWorker >> Process result");
       return;
@@ -71,7 +71,7 @@ async function startPostbackWorker() {
       }
       clickDoc.campId = camp;
       const t2 = Date.now();
-      const result = await service.processPostback({ user, clickDoc, event: task.event, ip: task.ip, query: task.query });
+      const result = await service.processPostback({ user, clickDoc, event: task.event, ip: task.ip, query: task.query, type: "campaign" });
       const t3 = Date.now();
       logger.info({ result, click: task.click, campMs: t1 - t0, clickMs: t2 - t1, procMs: t3 - t2, totalMs: t3 - t0 }, "PostbackWorker >> Process result");
       return;

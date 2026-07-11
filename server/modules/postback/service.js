@@ -314,10 +314,10 @@ async function incrementCapCounters(campId, event) {
   await Promise.all([redisClient.incr(dailyKey), redisClient.incr(totalKey)]);
 }
 
-async function processPostback({ user, clickDoc, event, ip, query }) {
+async function processPostback({ user, clickDoc, event, ip, query, type }) {
   const camp = clickDoc.campId;
 
-  if (!user.globalPostBack) {
+  if (type !== "campaign" && !user.globalPostBack) {
     logger.warn(
       { clickId: clickDoc._id, event, userId: user._id },
       "processPostback >> Global postback is disabled",

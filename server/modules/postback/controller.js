@@ -105,7 +105,7 @@ async function processPostbackSync(type, payload) {
     const camp = await service.resolveCampaignById(clickDoc.campId);
     if (!camp) return;
     clickDoc.campId = camp;
-    const result = await service.processPostback({ user, clickDoc, event: payload.event, ip: payload.ip, query: payload.query });
+    const result = await service.processPostback({ user, clickDoc, event: payload.event, ip: payload.ip, query: payload.query, type: "global" });
     logger.warn({ click: payload.click, type, ms: Date.now() - t0 }, "Sync fallback — global postback completed");
     return;
   } else if (type === "campaign") {
@@ -114,9 +114,9 @@ async function processPostbackSync(type, payload) {
     const clickDoc = await service.resolvePostbackClick(payload.click, user._id);
     if (!clickDoc) return;
     if (String(clickDoc.campId) !== String(camp._id)) return;
-    clickDoc.campId = camp;
-    const result = await service.processPostback({ user, clickDoc, event: payload.event, ip: payload.ip, query: payload.query });
-    logger.warn({ click: payload.click, type, ms: Date.now() - t0 }, "Sync fallback — campaign postback completed");
+      clickDoc.campId = camp;
+      const result = await service.processPostback({ user, clickDoc, event: payload.event, ip: payload.ip, query: payload.query, type: "campaign" });
+      logger.warn({ click: payload.click, type, ms: Date.now() - t0 }, "Sync fallback — campaign postback completed");
     return;
   }
 }
