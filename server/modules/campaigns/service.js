@@ -49,6 +49,7 @@ async function updateCampaign(userId, id, data) {
     redisClient.del(`campaign:${id}`),
     redisClient.del(`campaigns:${userId}`),
     redisClient.del(`dashboard:${userId}`),
+    redisClient.del(`postbackCamp:${id}`),
     ...(before.postbackToken ? [redisClient.del(`postbackCamp:${before.postbackToken}`)] : []),
     clearCampaignByIdCache(id),
   ]);
@@ -63,6 +64,7 @@ async function deleteCampaign(userId, id) {
     redisClient.del(`campaign:${id}`),
     redisClient.del(`dashboard:${userId}`),
     redisClient.del(`campaigns:${userId}`),
+    redisClient.del(`postbackCamp:${id}`),
     ...(campaign.postbackToken ? [redisClient.del(`postbackCamp:${campaign.postbackToken}`)] : []),
     clearCampaignByIdCache(id),
   ]);
